@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Dict
 import numpy as np
 import pandas as pd
 import os
@@ -9,7 +9,7 @@ from pm4py.objects.log.exporter.xes import factory as xes_exporter
 from pm4py.objects.conversion.log import factory as conversion_factory
 from pm4py.objects.log.log import EventStream
 from pm4py.util.constants import PARAMETER_CONSTANT_CASEID_KEY
-from pm4py.algo.discovery.alpha import factory as alpha_miner
+# from pm4py.algo.discovery.alpha import factory as alpha_miner
 
 import streamlit as st
 import altair as alt
@@ -57,20 +57,7 @@ def create_dotted_chart(df: pd.DataFrame, color_attribute: str, x_attr: str, y_s
     return c
 
 
-def create_footprint_matrix():
-    pass
-
-
-def main():
-    src_dir = Path('./data')
-    st.header("It's a badger, Badger, BADGER!")
-    datasets = [f for f in os.listdir(src_dir) if f.endswith('.csv')]
-    # log_file = Path('./data/running-example.csv')
-    log_file = st.selectbox('Dataset:', datasets, index=datasets.index('running-example.csv'))
-    log_file = src_dir/log_file
-
-    log = import_log_file(log_file)
-
+def show_dotted_chart(log_file: Union[str, Path]) -> None:
     df = csv_importer.import_dataframe_from_path(log_file, parameters={'sep': ';'})
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%d-%m-%Y:%H.%M')
     start_times = df.sort_values(['Timestamp', 'Case ID']).groupby(by='Case ID').first()
@@ -86,9 +73,41 @@ def main():
     x_attr = st.sidebar.selectbox('X-Axis:', ['Timestamp', 'Duration'], 0)
     y_sort = st.sidebar.selectbox('Sort Y-Axis:', ['Case ID', 'Duration'])
 
-    st.text(f"Loaded {len(log)} entries from '{log_file}'")
+    st.text(f"Loaded {len(df['Case ID'].unique())} cases with a total of {len(df)} events from '{log_file}'")
 
     st.altair_chart(create_dotted_chart(df, col_attr, x_attr, y_sort), width=-1)
+
+
+def create_footprint_matrix(log) -> Dict:
+    F = {}
+
+    for caseid in log:
+        for i in range(0, len(log[caseid]) - 1):
+            ai = log[caseid][i][0]
+            aj = log[caseid][i + 1][0]
+            if ai not in F:
+                F[ai] = dict()
+            if aj not in F[ai]:
+                F[ai][aj] = 0
+            F[ai][aj] += 1
+
+    for ai in sorted(F.keys()):
+        for aj in sorted(F[ai].keys()):
+            print(f"{ai} -> {aj}: {F[ai][aj]}")
+
+
+def main():
+    src_dir = Path('./data')
+    st.header("It's a badger, Badger, BADGER!")
+    datasets = [f for f in os.listdir(src_dir) if f.endswith('.csv')]
+    # log_file = Path('./data/running-example.csv')
+    log_file = st.selectbox('Dataset:', datasets, index=datasets.index('running-example.csv'))
+    log_file = src_dir/log_file
+
+    show_dotted_chart(log_file)
+
+    log = import_log_file(log_file)
+    create_footprint_matrix(log)
 
 
 if __name__ == "__main__":
