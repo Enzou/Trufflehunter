@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 
+from eventlog import EventLog
 from pm4py.objects.log.importer.csv import factory as csv_importer
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
 from pm4py.objects.conversion.log import factory as conversion_factory
@@ -17,8 +18,9 @@ import altair as alt
 
 @st.cache
 def import_log_file(src_file: Union[str, Path]) -> EventStream:
-    event_stream = csv_importer.import_event_stream(str(src_file), parameters={'sep': ';'})
-    log = conversion_factory.apply(event_stream, parameters={PARAMETER_CONSTANT_CASEID_KEY: 'Case ID'})
+    # event_stream = csv_importer.import_event_stream(str(src_file), parameters={'sep': ';'})
+    # log = conversion_factory.apply(event_stream, parameters={PARAMETER_CONSTANT_CASEID_KEY: 'Case ID'})
+    log = EventLog.read_from(src_file, datetime_fmt='%d-%m-%Y:%H.%M')
     return log
 
 
@@ -57,9 +59,8 @@ def create_dotted_chart(df: pd.DataFrame, color_attribute: str, x_attr: str, y_s
     return c
 
 
-def show_dotted_chart(log_file: Union[str, Path]) -> None:
-    df = csv_importer.import_dataframe_from_path(log_file, parameters={'sep': ';'})
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%d-%m-%Y:%H.%M')
+def show_dotted_chart(log: EventLog) -> None:
+    df = log._df.copy()
     start_times = df.sort_values(['Timestamp', 'Case ID']).groupby(by='Case ID').first()
     # add information about duration of case for every event
     df['Duration'] = (df['Timestamp'] - start_times.loc[df['Case ID']]['Timestamp'].values)/ np.timedelta64(1, 'm')
@@ -73,27 +74,27 @@ def show_dotted_chart(log_file: Union[str, Path]) -> None:
     x_attr = st.sidebar.selectbox('X-Axis:', ['Timestamp', 'Duration'], 0)
     y_sort = st.sidebar.selectbox('Sort Y-Axis:', ['Case ID', 'Duration'])
 
-    st.text(f"Loaded {len(df['Case ID'].unique())} cases with a total of {len(df)} events from '{log_file}'")
-
+    st.text(f"Loaded {len(df['Case ID'].unique())} cases with a total of {len(df)}")
     st.altair_chart(create_dotted_chart(df, col_attr, x_attr, y_sort), width=-1)
 
 
-def create_footprint_matrix(log) -> Dict:
+def create_footprint_matrix(log: EventLog) -> Dict:
+    # create transition matrix
     F = {}
-
-    for caseid in log:
-        for i in range(0, len(log[caseid]) - 1):
-            ai = log[caseid][i][0]
-            aj = log[caseid][i + 1][0]
+    for trace in log:
+        activities = trace.activities
+        for ai, aj in zip(activities, activities[1:]):
             if ai not in F:
                 F[ai] = dict()
-            if aj not in F[ai]:
-                F[ai][aj] = 0
-            F[ai][aj] += 1
+            F[ai][aj] = F[ai].get(aj, 0) + 1
+    a = 5
 
-    for ai in sorted(F.keys()):
-        for aj in sorted(F[ai].keys()):
-            print(f"{ai} -> {aj}: {F[ai][aj]}")
+    # create footprint matrix
+    foot_mat = {}
+
+    # for ai in sorted(F.keys()):
+    #     for aj in sorted(F[ai].keys()):
+    #         print(f"{ai} -> {aj}: {F[ai][aj]}")
 
 
 def main():
@@ -104,9 +105,9 @@ def main():
     log_file = st.selectbox('Dataset:', datasets, index=datasets.index('running-example.csv'))
     log_file = src_dir/log_file
 
-    show_dotted_chart(log_file)
-
     log = import_log_file(log_file)
+    show_dotted_chart(log)
+
     create_footprint_matrix(log)
 
 
