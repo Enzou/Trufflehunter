@@ -5,19 +5,15 @@ import pandas as pd
 import os
 
 from eventlog import EventLog
-from pm4py.objects.log.importer.csv import factory as csv_importer
+from miner import AlphaMiner
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
-from pm4py.objects.conversion.log import factory as conversion_factory
-from pm4py.objects.log.log import EventStream
-from pm4py.util.constants import PARAMETER_CONSTANT_CASEID_KEY
-# from pm4py.algo.discovery.alpha import factory as alpha_miner
+from pm4py.visualization.petrinet import factory as pn_vis_factory
 
 import streamlit as st
 import altair as alt
 
 
-@st.cache
-def import_log_file(src_file: Union[str, Path]) -> EventStream:
+def import_log_file(src_file: Union[str, Path]) -> EventLog:
     # event_stream = csv_importer.import_event_stream(str(src_file), parameters={'sep': ';'})
     # log = conversion_factory.apply(event_stream, parameters={PARAMETER_CONSTANT_CASEID_KEY: 'Case ID'})
     log = EventLog.read_from(src_file, datetime_fmt='%d-%m-%Y:%H.%M')
@@ -74,27 +70,8 @@ def show_dotted_chart(log: EventLog) -> None:
     x_attr = st.sidebar.selectbox('X-Axis:', ['Timestamp', 'Duration'], 0)
     y_sort = st.sidebar.selectbox('Sort Y-Axis:', ['Case ID', 'Duration'])
 
-    st.text(f"Loaded {len(df['Case ID'].unique())} cases with a total of {len(df)}")
+    st.text(f"Loaded {len(df['Case ID'].unique())} cases with a total of {len(df)} events")
     st.altair_chart(create_dotted_chart(df, col_attr, x_attr, y_sort), width=-1)
-
-
-def create_footprint_matrix(log: EventLog) -> Dict:
-    # create transition matrix
-    F = {}
-    for trace in log:
-        activities = trace.activities
-        for ai, aj in zip(activities, activities[1:]):
-            if ai not in F:
-                F[ai] = dict()
-            F[ai][aj] = F[ai].get(aj, 0) + 1
-    a = 5
-
-    # create footprint matrix
-    foot_mat = {}
-
-    # for ai in sorted(F.keys()):
-    #     for aj in sorted(F[ai].keys()):
-    #         print(f"{ai} -> {aj}: {F[ai][aj]}")
 
 
 def main():
@@ -108,7 +85,27 @@ def main():
     log = import_log_file(log_file)
     show_dotted_chart(log)
 
-    create_footprint_matrix(log)
+    if st.checkbox("Show footprint matrix?"):
+        st.subheader('Footprint Matrix:')
+        foot_mat = log.create_footprint_matrix()
+        st.table(foot_mat)
+
+    miner = AlphaMiner()
+    net, start_mark, end_mark = miner.mine(log)
+
+    if st.checkbox('Show details of Petri Net?'):
+        st.markdown("#### Places:")
+        for p in net.places:
+            st.text(p)
+
+        st.markdown("#### Transitions:")
+        for t in net.transitions:
+            st.text(t)
+
+    if st.checkbox("Show Petri Net?"):
+        st.subheader("Petri Net:")
+        gviz = pn_vis_factory.apply(net, start_mark, end_mark)
+        st.graphviz_chart(gviz)
 
 
 if __name__ == "__main__":

@@ -19,8 +19,14 @@ class Trace:
 
     @property
     def activities(self):
-        tmp_a = ['register request', 'examine thoroughly', 'examine casually', 'check ticket',
-                 'decide', 'reinitiate request', 'pay compensation', 'reject request']
-        tmp_map = {a: letter for a, letter in zip(tmp_a, 'abcdefgh')}
-        return [tmp_map[e[self.activity_attr]] for e in self._events]
+        # tmp_a = ['register request', 'examine thoroughly', 'examine casually', 'check ticket',
+        #          'decide', 'reinitiate request', 'pay compensation', 'reject request']
+        # tmp_map = {a: letter for a, letter in zip(tmp_a, 'abcdefgh')}
+        return [e[self.activity_attr] for e in self._events]
+
+    def __len__(self):
+        return len(self._events)
+
+    def __getitem__(self, item):
+        return self._events[item]
 
