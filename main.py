@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 
+import utils
 from eventlog import EventLog
 from miner import AlphaMiner
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
@@ -83,11 +84,17 @@ def main():
     log_file = src_dir/log_file
 
     log = import_log_file(log_file)
+    foot_mat = utils.create_heuristic_matrix(log)
     show_dotted_chart(log)
 
     if st.checkbox("Show footprint matrix?"):
         st.subheader('Footprint Matrix:')
-        foot_mat = log.create_footprint_matrix()
+        foot_mat = utils.create_footprint_matrix(log)
+        st.table(foot_mat)
+
+    if st.checkbox("Show heuristic matrix?"):
+        st.subheader('Heuristic Matrix:')
+        foot_mat = utils.create_heuristic_matrix(log)
         st.table(foot_mat)
 
     miner = AlphaMiner()
