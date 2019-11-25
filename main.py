@@ -5,6 +5,7 @@ import pandas as pd
 import os
 
 import utils
+import visualization as visu
 from eventlog import EventLog
 from miner import AlphaMiner
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
@@ -109,10 +110,16 @@ def main():
         for t in net.transitions:
             st.text(t)
 
-    if st.checkbox("Show Petri Net?"):
-        st.subheader("Petri Net:")
-        gviz = pn_vis_factory.apply(net, start_mark, end_mark)
-        st.graphviz_chart(gviz)
+    visu_type = st.selectbox("Select visualization:", ['None', 'Petri Net', 'Directly Follows Graph'], index=2)
+    if visu_type != 'None':
+        st.subheader(f"{visu_type}:")
+        if visu_type == 'Petri Net':
+            gviz = pn_vis_factory.apply(net, start_mark, end_mark)
+            st.graphviz_chart(gviz)
+        elif visu_type == 'Directly Follows Graph':
+            mat = utils.create_heuristic_matrix(log)
+            gviz = visu.create_directly_follows_graph(mat)
+            st.graphviz_chart(gviz)
 
 
 if __name__ == "__main__":
