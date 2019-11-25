@@ -41,7 +41,7 @@ def create_dotted_chart(df: pd.DataFrame, color_attribute: str, x_attr: str, y_s
         # strokeWidth=1
     ).encode(
         alt.X(f"{x_attr}:T"),
-        alt.Y('Case ID:O',  axis=alt.Axis(labelAngle=90)),# sort=alt.EncodingSortField(field=y_sort)),
+        alt.Y('Case ID:O', axis=alt.Axis(labelAngle=90)),  # sort=alt.EncodingSortField(field=y_sort)),
         # alt.Size('Deaths:Q',
         #          scale=alt.Scale(range=[0, 4000]),
         #          legend=alt.Legend(title='Annual Global Deaths')
@@ -61,7 +61,7 @@ def show_dotted_chart(log: EventLog) -> None:
     df = log._df.copy()
     start_times = df.sort_values(['Timestamp', 'Case ID']).groupby(by='Case ID').first()
     # add information about duration of case for every event
-    df['Duration'] = (df['Timestamp'] - start_times.loc[df['Case ID']]['Timestamp'].values)/ np.timedelta64(1, 'm')
+    df['Duration'] = (df['Timestamp'] - start_times.loc[df['Case ID']]['Timestamp'].values) / np.timedelta64(1, 'm')
 
     # TODO x-axis attribute: trace start-time (-> investigate case duration time), timestamp
     # TODO sorting traces (by duration of trace, case id, etc.)
@@ -82,21 +82,20 @@ def main():
     datasets = [f for f in os.listdir(src_dir) if f.endswith('.csv')]
     # log_file = Path('./data/running-example.csv')
     log_file = st.selectbox('Dataset:', datasets, index=datasets.index('running-example.csv'))
-    log_file = src_dir/log_file
+    log_file = src_dir / log_file
 
     log = import_log_file(log_file)
-    foot_mat = utils.create_heuristic_matrix(log)
     show_dotted_chart(log)
 
-    if st.checkbox("Show footprint matrix?"):
-        st.subheader('Footprint Matrix:')
-        foot_mat = utils.create_footprint_matrix(log)
-        st.table(foot_mat)
-
-    if st.checkbox("Show heuristic matrix?"):
-        st.subheader('Heuristic Matrix:')
-        foot_mat = utils.create_heuristic_matrix(log)
-        st.table(foot_mat)
+    mat_map = {
+        'Footprint Matrix': utils.create_footprint_matrix,
+        'Heuristic Matrix': utils.create_heuristic_matrix
+    }
+    show_mats = st.multiselect("Show matrices: ", list(mat_map.keys()))
+    for m in show_mats:
+        st.subheader(f"{m}:")
+        res_mat = mat_map[m](log)
+        st.table(res_mat)
 
     miner = AlphaMiner()
     net, start_mark, end_mark = miner.mine(log)
