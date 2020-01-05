@@ -4,7 +4,7 @@ from typing import Dict, List
 
 @dataclass
 class Trace:
-    def __init__(self, df, attrs:Dict=None):
+    def __init__(self, df, attrs: Dict = None):
         if not attrs:
             attrs = {}
         self.activity_attr = attrs.get('activity', 'Activity')
@@ -29,4 +29,3 @@ class Trace:
 
     def __getitem__(self, item):
         return self._events[item]
-
