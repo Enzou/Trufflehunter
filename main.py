@@ -25,10 +25,8 @@ import altair as alt
 def import_log_file(src_file: Union[str, Path]) -> EventLog:
     # event_stream = csv_importer.import_event_stream(str(src_file), parameters={'sep': ';'})
     # log = conversion_factory.apply(event_stream, parameters={PARAMETER_CONSTANT_CASEID_KEY: 'Case ID'})
-    log = EventLog.read_from(src_file, case_id_attr='visitId', activity_attr='ua_name', timestamp_attr='ua_starttime', ts_parse_params={
-        # 'format':'%d-%m-%Y:%H.%M'
-        'unit': 'ms'
-    })
+    log = EventLog.read_from(src_file, case_id_attr='visitId', activity_attr='ua_name',
+                             timestamp_attr='ua_starttime', ts_parse_params={'unit': 'ms'})
     return log
 
 
@@ -89,6 +87,7 @@ def show_dotted_chart(log: EventLog) -> None:
     st.altair_chart(create_dotted_chart(df, col_attr, x_attr, y_attr, y_sort, tooltip=tooltip), width=-1)
 
 
+
 def main():
     src_dir = Path('./data')
     st.header("Let the hunt begin!")
@@ -96,8 +95,11 @@ def main():
     # log_file = Path('./data/running-example.csv')
     log_file = st.selectbox('Dataset:', datasets, index=datasets.index('dt_sessions_1k.csv'))
     # log_file = st.selectbox('Dataset:', datasets, index=0)
+    # log_file = st.selectbox('Dataset:', datasets, index=0)
 
-    log = import_log_file(src_dir/log_file)
+    log = import_log_file(src_dir / log_file)
+    log = log[log._df['ua_type'] == 'Load']   # drop XHR requests to tracking/analytics sites
+
     show_dotted_chart(log)
 
     mat_map = {

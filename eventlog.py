@@ -4,6 +4,8 @@ from typing import Optional, Dict
 import pandas as pd
 from trace import Trace
 
+# TODO classify types of features (like in DISCO) i.e. Case, Activity, Resource, Timestamp, Other
+
 
 class EventLog:
     def __init__(self, df: Optional[pd.DataFrame], case_id_attr='Case ID', activity_attr='Activity',
@@ -12,6 +14,7 @@ class EventLog:
         self.case_id_attr = case_id_attr
         self.activity_attr = activity_attr
         self.ts_attr = timestamp_attr
+        self._ts_parse_params = ts_parse_params
         if ts_parse_params:
             self._df[self.ts_attr] = pd.to_datetime(self._df[self.ts_attr], **ts_parse_params)
 
@@ -36,3 +39,7 @@ class EventLog:
 
     def get_unique_activities(self):
         return self._df[self.activity_attr].unique()
+
+    def __getitem__(self, mask):
+        df = self._df[mask]
+        return EventLog(df, self.case_id_attr, self.activity_attr, self.ts_attr, self._ts_parse_params)

@@ -3,7 +3,6 @@ import pandas as pd
 from eventlog import EventLog
 
 
-
 def create_footprint_matrix(log: EventLog) -> pd.DataFrame:
     unique_activities = log.get_unique_activities()
     trans_mat = create_transition_matrix(log, unique_activities)
