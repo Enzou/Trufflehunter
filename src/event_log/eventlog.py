@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional, Dict
 
 import pandas as pd
-from trace import Trace
+from src.event_log.trace import Trace
 
 # TODO classify types of features (like in DISCO) i.e. Case, Activity, Resource, Timestamp, Other
 
@@ -16,7 +16,7 @@ class EventLog:
         self.ts_attr = timestamp_attr
         self._ts_parse_params = ts_parse_params
         if ts_parse_params:
-            self._df[self.ts_attr] = pd.to_datetime(self._df[self.ts_attr], **ts_parse_params)
+            self._df.loc[:, self.ts_attr] = pd.to_datetime(self._df[self.ts_attr], **ts_parse_params)
 
         log_attrs = {
             'activity': activity_attr,

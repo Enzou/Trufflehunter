@@ -4,7 +4,7 @@ from pm4py.objects.petri.petrinet import Marking, PetriNet
 from pm4py.algo.discovery.alpha import factory as alpha_miner
 from pm4py.util.constants import PARAMETER_CONSTANT_CASEID_KEY, PARAMETER_CONSTANT_ACTIVITY_KEY
 
-from eventlog import EventLog
+from src.event_log.eventlog import EventLog
 
 
 class AlphaMiner:

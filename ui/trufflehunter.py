@@ -1,25 +1,29 @@
 from pathlib import Path
-from typing import Union, Dict, Optional, List
+from typing import Union
 import numpy as np
-import pandas as pd
 import os
 
-import utils
-import visualization as visu
-from eventlog import EventLog
+import streamlit as st
+st.text(os.getcwd())
+
+from ui.in_ui import TEST
+from outer import TEST
+from src.visualization import TEST
+from src.visualization import visualization as visu
+from src.pmtools import matrices
+from src.event_log.eventlog import EventLog
 from miner import AlphaMiner
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
 from pm4py.visualization.petrinet import factory as pn_vis_factory
-
-import streamlit as st
-import altair as alt
 
 
 # TODO:
 # - show stats about paths in the log (i.e. # of different paths, counts per path)
 # - separate query parameters from path (i.e. activity) -> query params = 'Resource'
-# - filter entries for different domains (e.g. Google Analytics, etc.)
 # - try to group/cluster paths
+
+# load weblog -> preprocessing/filtern -> transform 2 event log -> extract stats -> process mining
+from src.visualization.visualization import create_dotted_chart
 
 
 def import_log_file(src_file: Union[str, Path]) -> EventLog:
@@ -33,36 +37,6 @@ def import_log_file(src_file: Union[str, Path]) -> EventLog:
 def export_log_file(log_file, file_path: Path):
     xes_file = file_path.with_suffix('.xes')
     xes_exporter.export_log(log_file, str(xes_file))
-
-
-def create_dotted_chart(df: pd.DataFrame, color_attribute: str, x_attr: str, y_attr: str, y_sort: str, tooltip: Optional[List] = None) -> alt.Chart:
-    # c = alt.Chart(df).mark_line().encode(
-    #     alt.X(f"{x_attr}:T",  axis=alt.Axis(labelAngle=-45)),
-    #     alt.Y('Case ID:O'),# sort=alt.EncodingSortField(field=y_sort)),
-    #     detail='Duration',
-    #     color=alt.Color(color_attribute))
-
-    c = alt.Chart(df).mark_circle(
-        opacity=0.8,
-        size=100,
-        # stroke='black',
-        # strokeWidth=1
-    ).encode(
-        alt.X(f"{x_attr}:T"),
-        alt.Y(f"{y_attr}:O", axis=alt.Axis(labelAngle=90)),  # sort=alt.EncodingSortField(field=y_sort)),
-        # alt.Size('Deaths:Q',
-        #          scale=alt.Scale(range=[0, 4000]),
-        #          legend=alt.Legend(title='Annual Global Deaths')
-        #          ),
-        color=alt.Color(color_attribute),
-        tooltip=tooltip
-    ).properties(
-        width=1000,
-        height=800
-        # ).transform_filter(
-        #     alt.datum.Entity != 'All natural disasters'
-    ).interactive()
-    return c
 
 
 def show_dotted_chart(log: EventLog) -> None:
@@ -87,24 +61,24 @@ def show_dotted_chart(log: EventLog) -> None:
     st.altair_chart(create_dotted_chart(df, col_attr, x_attr, y_attr, y_sort, tooltip=tooltip), width=-1)
 
 
-
 def main():
-    src_dir = Path('./data')
+    DATA_DIR = Path('data/raw')
+    print(os.listdir(DATA_DIR))
     st.header("Let the hunt begin!")
-    datasets = [f for f in os.listdir(src_dir) if f.endswith('.csv')]
+    datasets = [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
     # log_file = Path('./data/running-example.csv')
-    log_file = st.selectbox('Dataset:', datasets, index=datasets.index('dt_sessions_1k.csv'))
-    # log_file = st.selectbox('Dataset:', datasets, index=0)
-    # log_file = st.selectbox('Dataset:', datasets, index=0)
+    log_file = st.selectbox('Dataset:', datasets, index=datasets.index('dt_sessions_10k.csv'))
+    # log_file = st.selectbox('Dataset:', datasets, index=1)
+    # log_file = st.selectbox('Dataset:', datasets, index=0)kk
 
-    log = import_log_file(src_dir / log_file)
+    log = import_log_file(DATA_DIR / log_file)
     log = log[log._df['ua_type'] == 'Load']   # drop XHR requests to tracking/analytics sites
 
     show_dotted_chart(log)
 
     mat_map = {
-        'Footprint Matrix': utils.create_footprint_matrix,
-        'Heuristic Matrix': utils.create_heuristic_matrix
+        'Footprint Matrix': matrices.create_footprint_matrix,
+        'Heuristic Matrix': matrices.create_heuristic_matrix
     }
     show_mats = st.multiselect("Show matrices: ", list(mat_map.keys()))
     for m in show_mats:
@@ -131,7 +105,7 @@ def main():
             gviz = pn_vis_factory.apply(net, start_mark, end_mark)
             st.graphviz_chart(gviz)
         elif visu_type == 'Directly Follows Graph':
-            mat = utils.create_heuristic_matrix(log)
+            mat = matrices.create_heuristic_matrix(log)
             gviz = visu.create_directly_follows_graph(mat)
             st.graphviz_chart(gviz)
 

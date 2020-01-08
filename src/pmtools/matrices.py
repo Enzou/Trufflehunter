@@ -1,6 +1,6 @@
 import itertools
 import pandas as pd
-from eventlog import EventLog
+from src.event_log.eventlog import EventLog
 
 
 def create_footprint_matrix(log: EventLog) -> pd.DataFrame:
