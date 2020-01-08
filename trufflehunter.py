@@ -2,17 +2,12 @@ from pathlib import Path
 from typing import Union
 import numpy as np
 import os
-
 import streamlit as st
-st.text(os.getcwd())
 
-from ui.in_ui import TEST
-from outer import TEST
-from src.visualization import TEST
 from src.visualization import visualization as visu
 from src.pmtools import matrices
 from src.event_log.eventlog import EventLog
-from miner import AlphaMiner
+from src.miners import AlphaMiner
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
 from pm4py.visualization.petrinet import factory as pn_vis_factory
 
