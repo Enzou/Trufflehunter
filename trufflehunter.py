@@ -9,7 +9,7 @@ import streamlit as st
 from src.visualization import visualization as visu
 from src.pmtools import matrices
 from src.event_log.eventlog import EventLog
-from miner import AlphaMiner
+from src.miners import AlphaMiner
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
 from pm4py.visualization.petrinet import factory as pn_vis_factory
 
