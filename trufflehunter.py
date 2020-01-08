@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Union
 import numpy as np
 import os
+import sys
+
 import streamlit as st
 
 from src.visualization import visualization as visu
@@ -62,7 +64,7 @@ def main():
     st.header("Let the hunt begin!")
     datasets = [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
     # log_file = Path('./data/running-example.csv')
-    log_file = st.selectbox('Dataset:', datasets, index=datasets.index('dt_sessions_10k.csv'))
+    log_file = st.selectbox('Dataset:', datasets, index=datasets.index('dt_sessions_01_10_2019-01_01_2020.csv'))
     # log_file = st.selectbox('Dataset:', datasets, index=1)
     # log_file = st.selectbox('Dataset:', datasets, index=0)kk
 
