@@ -11,8 +11,10 @@ from anytree.importer import DictImporter
 from tqdm import tqdm
 
 import src.utils.io as io
+from src.preprocessing import convert_weblog
+from src.preprocessing.ruleset import Ruleset
 
-mappings = [
+aggregation_nodes = [
     "author",  # under blog
     "availability-and-performance",
     "blog",  # /wp-content/*  is resource
@@ -43,6 +45,14 @@ mappings = [
     "technologies",  # /* : resources
     "upgrade"
 ]
+
+
+mappings = Ruleset([
+    # if just string-rule is given, the resulting activity will be 'View <Page>'
+    "blog/author",
+    "blog",
+    (r"perform-?\w*", "View Perform-Conference Details"),
+])
 
 
 # event_information: ['dynatrace-go', 'perform*' ]
@@ -90,7 +100,7 @@ def build_page_hierarchy(df: pd.DataFrame, update_fn: Callable = lambda x: x) ->
                 if id not in tree:
                     # pre-pruning:
                     # page indicates pagination of previous site, so just repeat it
-                    if (parent in mappings and node != 'author') or node == "page":
+                    if (parent in aggregation_nodes and node != 'author') or node == "page":
                         drop_last_n = len(frags) - i - 1
                         frags = frags[:-drop_last_n]  # drop resource for aggregation # TODO fix dirty hack for pruned tree
                         break
@@ -163,10 +173,11 @@ def prune_tree(root: Node, min_nodes: int = 2) -> Node:
     Post-Prune page tree after creation by removing nodes that occured at most 1 time.
     Furthermore, intermediary nodes, that never have actually been visited and have only one child will be collapsed
     """
-    for node in PostOrderIter(root):
-        if node.count < min_nodes:
-            node.parent = None
-            del node
+    if min_nodes > 0:
+        for node in PostOrderIter(root):
+            if node.count < min_nodes:
+                node.parent = None
+                del node
 
     return root
 
@@ -176,6 +187,12 @@ def analyze_paths(df: pd.DataFrame) -> Tuple[Node, int]:
     root = DictImporter().import_(tree)
 
     # TODO filter sessions with only 1 entry
+    available_rules = []
+    selected_rules = st.multiselect("Mapping rules", options=available_rules)
+
+    new_rule = st.text_input("New Rule: ")
+    if st.button("+"):
+        available_rules.append(new_rule)
 
     if st.checkbox("Show pagetree in ASCII?", value=False):
         st.text(RenderTree(root, style=ContRoundStyle()))
@@ -183,10 +200,8 @@ def analyze_paths(df: pd.DataFrame) -> Tuple[Node, int]:
         st.text(f"max count {max_count}")
         # color is HSV; saturation determines color intensity
 
-        if st.checkbox("Prune?", value=True):
-            print("Pruning tree")
-            min_counts = st.slider("Minimum number of counts:", value=2)
-            root = prune_tree(root, min_counts)
+        min_counts = st.slider("Minimum number of counts:", value=2)
+        root = prune_tree(root, min_counts)
 
         no_leafs = len([True for n in PostOrderIter(root) if n.is_leaf])
         print(f"Tree has {no_leafs} leaf-nodes")
@@ -236,6 +251,9 @@ def main():
     if st.button("Export page tree"):
         export_page_tree(fig, file_name)
     # build_page_visit_graph(df)
+
+    if st.button("Convert to weblog"):
+        convert_weblog(df, mappings)
 
 
 if __name__ == "__main__":
