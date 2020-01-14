@@ -269,8 +269,7 @@ def load_data(file_name: str) -> pd.DataFrame:
 
 
 def main():
-    if not st._is_running_with_streamlit:
-        print("Not using streamlit - using fallback instead")
+    cli_mode = not st._is_running_with_streamlit
     st.title("Exploratory Data Analysis")
 
     st.sidebar.radio("Stage:", ['Exploratory Data Analysis'])
@@ -278,7 +277,7 @@ def main():
     available_files = io.get_available_datasets()
     file_name = st.sidebar.selectbox("Source web log: ",
                                      options=available_files,
-                                     index=available_files.index('dt_sessions_1k.csv'))
+                                     index=available_files.index('dt_sessions_70k.csv'))
     df = load_data(file_name)
 
     # preprocess web log
@@ -293,9 +292,13 @@ def main():
     if st.button("Export page tree"):
         export_page_tree(fig, file_name)
 
-    # if st.button("Convert to weblog"):
-    elog = convert_weblog(df, source_col, rules)
-    elog._df.to_csv(Path("./data/processed") / file_name)
+    if st.button("Convert to weblog") or cli_mode:
+        elog = convert_weblog(df, source_col, rules, activity_attr='activity',
+                              case_id_attr='visitId', timestamp_attr='ua_starttime',
+                              ts_parse_params={'unit': 'ms'})
+        dest_file = Path("./data/processed") / file_name
+        elog._df.to_csv(dest_file, index=False)
+        print(f"Saved event log to {dest_file}")
 
 
 if __name__ == "__main__":
