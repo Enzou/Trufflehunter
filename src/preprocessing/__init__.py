@@ -6,5 +6,10 @@ from src.event_log.eventlog import EventLog
 from src.preprocessing.ruleset import Ruleset
 
 
-def convert_weblog(df: pd.DataFrame, mapping_rules: Ruleset) -> EventLog:
-    pass
+def convert_weblog(df: pd.DataFrame, src_col: str, mapping_rules: Ruleset) -> EventLog:
+    df['activity'] = df[src_col].apply(mapping_rules.entry_to_activity)
+    return EventLog(df, activity_attr='activity', case_id_attr='visitId', timestamp_attr='ua_starttime')
+
+
+def filter_by_session_length(df: pd.DataFrame, session_col: str, min_len: int = 2) -> pd.DataFrame:
+    return df[df[session_col].groupby(df[session_col]).transform('size') >= min_len]
