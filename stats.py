@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-from trufflehunter import show_dotted_chart, read_data
+from trufflehunter import show_dotted_chart
 from src.event_log.eventlog import EventLog
 from src.utils.io import load_csv_data
 
@@ -46,9 +46,6 @@ def stats(df, threshold = 2):
     longest_trace_count = visit_id[options]
     st.write(f"Number of request in the Trace {longest_trace_count}")
     
-
-    
-
     select_all = st.checkbox('All "longest Traces"? (only selected)')
     show_table = st.checkbox('Show Table with all Activities?')
     if select_all:
@@ -62,8 +59,6 @@ def stats(df, threshold = 2):
     if show_table:
         st.table( df[ df.visitId.str.contains( options )])
 
-
-    #st.bar_chart(visit_id.head())
     st.markdown ("## Duration: ")
     "Traces Summary:", df.describe()
 
@@ -86,45 +81,13 @@ def stats(df, threshold = 2):
     "Count: ", df[url].value_counts()
 
 
-def traces(log :EventLog):
-    st.write(log._df)
-
-    traces = log.traces
-    # first trace - testing
-    st.write(traces[21]._events)
-    trace = traces[0]._events
-
-    # sort traces < 2 
-
-    print (f"trace:, {trace}")
-    st.write("###############################")
-    print("###############################")
-
-
-    traces.activities()
-
-    st.write(log[1].traces)
-
-# write all activities of a trace
-
-# calculate levenshtein distance between activitiy vectors
-
-# Next Steps Clustering
+    # TODO: stats only works with dataframe
 
 def main():
-    log = read_data()
-    #log = load_csv_data("first30k.csv")
-    #traces(log)
-
-    # TODO: stats only works with dataframe
-    df = log._df
+    df = load_csv_data("first30k.csv")
     df = df.set_index("Unnamed: 0")
     stats(df)
 
 
 if __name__ == "__main__":
     main()
-
-    # stats fertig stellen / pre prune
-    # tracesid mapping
-    # dbscan clustering
