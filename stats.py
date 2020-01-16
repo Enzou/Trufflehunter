@@ -8,8 +8,6 @@ from src.utils.io import load_csv_data
 
 # umbauen auf eventlog -> dottet chart with activities
 def stats(df, threshold = 2):
-
-
     visit_id = df["visitId"].value_counts().sort_values(ascending = False)
     visit_id = visit_id.rename(columns = { "visitId" : "TraceId" } )
     
