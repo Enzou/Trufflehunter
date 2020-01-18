@@ -9,8 +9,8 @@ import pandas as pd
 _DATA_DIR = Path('./data/')
 
 
-def get_available_datasets() -> List[str]:
-    return os.listdir(_DATA_DIR / 'raw')
+def get_available_datasets(path = "raw") -> List[str]:
+    return os.listdir(_DATA_DIR / path)
 
 
 def filter_dt_session(df: pd.DataFrame) -> pd.DataFrame:
@@ -23,7 +23,7 @@ def load_csv_data(file_name: str, prep_fn: Callable = filter_dt_session) -> pd.D
     Read csv file from directory.
     """
     _DATA_DIR = Path('./data/')
-    filtered_file = _DATA_DIR / 'interim' / file_name
+    filtered_file = _DATA_DIR / 'processed' / file_name
 
     if os.path.exists(filtered_file):
         return pd.read_csv(filtered_file)
