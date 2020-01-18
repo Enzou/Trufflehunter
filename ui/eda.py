@@ -272,8 +272,6 @@ def main():
     cli_mode = not st._is_running_with_streamlit
     st.title("Exploratory Data Analysis")
 
-    st.sidebar.radio("Stage:", ['Exploratory Data Analysis'])
-
     available_files = io.get_available_datasets()
     file_name = st.sidebar.selectbox("Source web log: ",
                                      options=available_files,
