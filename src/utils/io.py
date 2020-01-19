@@ -5,11 +5,10 @@ from typing import Callable, List
 
 import pandas as pd
 
-
 _DATA_DIR = Path('./data/')
 
 
-def get_available_datasets(path = "raw") -> List[str]:
+def get_available_datasets(path="raw") -> List[str]:
     return os.listdir(_DATA_DIR / path)
 
 
