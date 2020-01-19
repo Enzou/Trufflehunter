@@ -4,13 +4,14 @@ import ui.eda
 import ui.cluster
 import ui.process_identification
 import ui.trufflehunter
-
+import ui.stats
 
 PAGES = {
     "Weblog -> Eventlog": ui.eda,
     "Clustering": ui.cluster,
     "Process Identification": ui.process_identification,
     "TruffleHunt": ui.trufflehunter
+    "Statistics": ui.stats
 }
 
 
