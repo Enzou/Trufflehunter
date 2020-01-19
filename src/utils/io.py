@@ -1,7 +1,7 @@
 import functools
 import os
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 import pandas as pd
 
@@ -17,20 +17,27 @@ def filter_dt_session(df: pd.DataFrame) -> pd.DataFrame:
 
 
 @functools.lru_cache()
-def load_csv_data(file_name: str, prep_fn: Callable = filter_dt_session) -> pd.DataFrame:
+def load_csv_data(file_name: str, src_dir: str = 'raw', prep_fn: Optional[Callable] = None) -> pd.DataFrame:
     """
     Read csv file from directory.
     """
     _DATA_DIR = Path('./data/')
-    filtered_file = _DATA_DIR / 'processed' / file_name
+    allow_cache = src_dir == "raw"
 
-    if os.path.exists(filtered_file):
-        return pd.read_csv(filtered_file)
-    else:
-        df = pd.read_csv(_DATA_DIR / 'raw' / file_name)
+    if allow_cache:  # try 'caching' raw file to avoid applying the prep_fn needlessly
+        filtered_file = _DATA_DIR / 'interim' / file_name
+        if os.path.exists(filtered_file):
+            return pd.read_csv(filtered_file)
+
+    df = pd.read_csv(_DATA_DIR / src_dir / file_name)
+    if prep_fn is not None:
         df_filtered = prep_fn(df)
-        print(f"Loaded data: {len(df)} / after filtering {len(df_filtered)}")
-        df_filtered.to_csv(filtered_file, index=False)  # store filtered DF for later re-usage
+        print(f"Filtered out {len(df) - len(df_filtered)} entries")
+        df = df_filtered
+    print(f"Loaded data: {len(df)}")
+
+    if allow_cache:
+        df.to_csv(filtered_file, index=False)  # store filtered DF for later re-usage
         print("Saved filtered dataframe")
 
-        return df_filtered
+    return df

@@ -273,7 +273,7 @@ def main():
     #                                  options=available_files,
     #                                  index=available_files.index('dt_sessions_70k.csv'))
     # df = load_data(file_name)
-    file_name, df = select_file(Path('./data/raw'))
+    file_name, df = select_file(Path('raw'))
 
     # preprocess web log
     df_filtered = filter_by_session_length(df, 'visitId')
