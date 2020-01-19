@@ -10,7 +10,7 @@ PAGES = {
     "Weblog -> Eventlog": ui.eda,
     "Clustering": ui.cluster,
     "Process Identification": ui.process_identification,
-    "TruffleHunt": ui.trufflehunter
+    "TruffleHunt": ui.trufflehunter,
     "Statistics": ui.stats
 }
 
