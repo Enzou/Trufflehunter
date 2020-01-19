@@ -1,8 +1,5 @@
-import functools
 from typing import Tuple, Optional, Callable, Dict, List
 from pathlib import PurePath, Path
-
-import graphviz
 from anytree import Node, RenderTree, ContRoundStyle, Resolver, ChildResolverError, PostOrderIter
 from anytree.exporter import DotExporter, DictExporter
 import streamlit as st
@@ -11,6 +8,7 @@ from anytree.importer import DictImporter
 from tqdm import tqdm
 
 import src.utils.io as io
+from ui.components.data_selector import select_file
 from src.preprocessing import convert_weblog, filter_by_session_length
 from src.preprocessing.ruleset import Ruleset
 
@@ -220,7 +218,7 @@ def mine_mapping_rules(root: Node, min_leaf_nodes: int = 2) -> Tuple[Node, Rules
                 if not child.is_activity:
                     child.parent = None
                     del child
-        else:
+        elif not n.is_root:
             n.parent.children += n.children
 
         # TODO siblings with similar names should be combined
@@ -270,13 +268,12 @@ def load_data(file_name: str) -> pd.DataFrame:
 
 def main():
     cli_mode = not st._is_running_with_streamlit
-    st.title("Exploratory Data Analysis")
-
-    available_files = io.get_available_datasets()
-    file_name = st.sidebar.selectbox("Source web log: ",
-                                     options=available_files,
-                                     index=available_files.index('dt_sessions_70k.csv'))
-    df = load_data(file_name)
+    # available_files = io.get_available_datasets()
+    # file_name = st.sidebar.selectbox("Source web log: ",
+    #                                  options=available_files,
+    #                                  index=available_files.index('dt_sessions_70k.csv'))
+    # df = load_data(file_name)
+    file_name, df = select_file(Path('./data/raw'))
 
     # preprocess web log
     df_filtered = filter_by_session_length(df, 'visitId')
@@ -296,7 +293,7 @@ def main():
                               ts_parse_params={'unit': 'ms'})
         dest_file = Path("./data/processed") / file_name
         elog._df.to_csv(dest_file, index=False)
-        print(f"Saved event log to {dest_file}")
+        st.text(f"Saved event log to {dest_file}")
 
 
 if __name__ == "__main__":

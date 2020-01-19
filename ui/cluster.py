@@ -13,6 +13,7 @@ from src.event_log.trace import Trace
 from src.preprocessing import filter_by_session_length
 from src.preprocessing.vectorize import create_corpus, create_np_matrix, vectorize_activities
 import src.utils.io as io
+from ui.components import attribute_mapper
 
 DATA_PATH = Path("data/processed")
 
@@ -66,8 +67,10 @@ def main():
 
     log = read_processed_data(file_name)
 
-    traces = filter_by_session_length(log._df, 'visitId')
-    traces = traces.groupby('visitId').apply(Trace)
+    attr_mapping = attribute_mapper.show(log._df.columns)
+    case_attr = attr_mapping['case_id_attr']
+    traces = filter_by_session_length(log._df, case_attr)
+    traces = traces.groupby(case_attr).apply(Trace, attrs=attr_mapping)
 
     corpus = create_corpus(traces)
     show_corpus = st.checkbox("Show Corpus")

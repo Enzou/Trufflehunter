@@ -21,14 +21,16 @@ from pm4py.visualization.petrinet import factory as pn_vis_factory
 
 # load weblog -> preprocessing/filtern -> transform 2 event log -> extract stats -> process mining
 from src.visualization.visualization import create_dotted_chart
+from ui.components import attribute_mapper
+from ui.components.data_selector import select_file
 
 
-def import_log_file(src_file: Union[str, Path]) -> EventLog:
-    # event_stream = csv_importer.import_event_stream(str(src_file), parameters={'sep': ';'})
-    # log = conversion_factory.apply(event_stream, parameters={PARAMETER_CONSTANT_CASEID_KEY: 'Case ID'})
-    log = EventLog.read_from(src_file, case_id_attr='visitId', activity_attr='ua_name',
-                             timestamp_attr='ua_starttime', ts_parse_params={'unit': 'ms'})
-    return log
+# def import_log_file(src_file: Union[str, Path]) -> EventLog:
+#     # event_stream = csv_importer.import_event_stream(str(src_file), parameters={'sep': ';'})
+#     # log = conversion_factory.apply(event_stream, parameters={PARAMETER_CONSTANT_CASEID_KEY: 'Case ID'})
+#     log = EventLog.read_from(src_file, case_id_attr='visitId', activity_attr='ua_name',
+#                              timestamp_attr='ua_starttime', ts_parse_params={'unit': 'ms'})
+#     return log
 
 
 def export_log_file(log_file, file_path: Path):
@@ -59,17 +61,14 @@ def show_dotted_chart(log: EventLog) -> None:
 
 
 def main():
-    DATA_DIR = Path('data/raw')
-    print(os.listdir(DATA_DIR))
     st.header("Let the hunt begin!")
-    datasets = [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
-    # log_file = Path('./data/running-example.csv')
-    log_file = st.selectbox('Dataset:', datasets, index=datasets.index('dt_sessions_01_10_2019-01_01_2020.csv'))
-    # log_file = st.selectbox('Dataset:', datasets, index=1)
-    # log_file = st.selectbox('Dataset:', datasets, index=0)kk
 
-    log = import_log_file(DATA_DIR / log_file)
-    log = log[log._df['ua_type'] == 'Load']   # drop XHR requests to tracking/analytics sites
+    file_name, df = select_file(Path('./data/raw'), default='dt_sessions_1k.csv')
+    attr_mapping = attribute_mapper.show(df.columns)
+    log = EventLog(df, **attr_mapping)
+    #
+    # log = import_log_file(DATA_DIR / log_file)
+    # log = log[log._df['ua_type'] == 'Load']   # drop XHR requests to tracking/analytics sites
 
     show_dotted_chart(log)
 
