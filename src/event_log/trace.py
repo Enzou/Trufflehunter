@@ -24,6 +24,7 @@ class Trace:
         # tmp_map = {a: letter for a, letter in zip(tmp_a, 'abcdefgh')}
         return [e[self.activity_attr] for e in self._events]
 
+    
     def __len__(self):
         return len(self._events)
 

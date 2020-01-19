@@ -4,11 +4,14 @@ from typing import Optional, Dict
 import pandas as pd
 from src.event_log.trace import Trace
 
+import streamlit as st
+
+
 # TODO classify types of features (like in DISCO) i.e. Case, Activity, Resource, Timestamp, Other
 
-
+# visitID -> Case ID
 class EventLog:
-    def __init__(self, df: Optional[pd.DataFrame], case_id_attr='Case ID', activity_attr='Activity',
+    def __init__(self, df: Optional[pd.DataFrame], case_id_attr='visitId', activity_attr='Activity',
                  timestamp_attr='Timestamp', ts_parse_params: Optional[Dict] = None):
         self._df = df
         self.case_id_attr = case_id_attr
