@@ -3,12 +3,13 @@ import streamlit as st
 import ui.eda
 import ui.cluster
 import ui.trufflehunter
-
+import ui.stats
 
 PAGES = {
     "Exploratory Data Analysis": ui.eda,
     "Clustering": ui.cluster,
-    "TrufflesHunt": ui.trufflehunter
+    "TrufflesHunt": ui.trufflehunter,
+    "Statistics": ui.stats
 }
 
 
