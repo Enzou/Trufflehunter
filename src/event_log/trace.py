@@ -7,10 +7,11 @@ class Trace:
     def __init__(self, df, attrs: Dict = None):
         if not attrs:
             attrs = {}
-        self.activity_attr = attrs.get('activity', 'Activity')
-        self.id_attr = attrs.get('id', 'Case ID')
-        self.ts_attr = attrs.get('timestamp', 'Timestamp')
+        self.activity_attr = attrs.get('activity_attr', 'Activity')
+        self.id_attr = attrs.get('case_id_attr', 'Case ID')
+        self.ts_attr = attrs.get('timestamp_attr', 'Timestamp')
         self.features: List[str] = list(df.columns)
+        self.id = df[self.id_attr].iloc[0]
         self._df = df
         self._events: List[Dict] = df.to_dict('records')
 
@@ -24,9 +25,11 @@ class Trace:
         # tmp_map = {a: letter for a, letter in zip(tmp_a, 'abcdefgh')}
         return [e[self.activity_attr] for e in self._events]
 
-    
     def __len__(self):
         return len(self._events)
 
     def __getitem__(self, item):
         return self._events[item]
+
+    def __str__(self):
+        return f"[{self.id}]  {' -> '.join(self.activities)}"
