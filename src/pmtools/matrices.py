@@ -1,5 +1,9 @@
 import itertools
 import pandas as pd
+import numpy as np
+from sklearn.metrics.pairwise import paired_distances
+from sklearn.metrics.pairwise import cosine_similarity
+from typing import Callable
 from src.event_log.eventlog import EventLog
 
 
@@ -43,3 +47,16 @@ def create_heuristic_matrix(log: EventLog) -> pd.DataFrame:
         mat.loc[row, col] = (fwd_transition - back_transition) / (fwd_transition + back_transition + 1)
 
     return mat
+
+
+def create_similarity_matrix(corpus, traces, vectorizer_fn: Callable) -> np.array:
+    # vfunc = np.vectorize(vectorizer_fn, otypes=[int] * len(corpus))
+    # mat = vfunc(traces)
+    # mat = np.fromiter((vectorizer_fn(t) for t in traces), dtype=int)
+
+    # return mat
+    m = [vectorizer_fn(t) for t in traces]
+    mat = cosine_similarity(m)
+
+    return mat
+
