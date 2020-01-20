@@ -53,6 +53,28 @@ def write_outliers_to_pickle(outliers, file_name):
     with open(DATA_PATH_Processed / file_name, 'wb') as f:
         pickle.dump(outliers, f)
 
+def time_anomaly(df, file_name):
+    duration = df.groupby("visitId").agg({"duration": ["sum"]})
+    count = df.groupby("visitId").agg({"activity":["count"]})
+    c = pd.concat([duration ,count], axis = 1, sort= False)
+    calc = c.iloc[:, 0] / c.iloc[:, 1]
+    c = pd.concat([c, calc], axis = 1, sort = False)
+
+    c.columns = ["duration", "count", "metric"]
+
+    c = c.sort_values(by=["metric"], ascending = True)
+
+    c = c[c["metric"] < 1500]
+    c = c[ c["count"] > 3]
+
+    outlier_df = df[df["visitId"].isin(c.index)]
+
+    st.markdown ("## Timebased Outliers: ")
+    st.write("Duration (in ms) divided by the activity count. If this value is lower than 1500 the trace is potentially anomaly:")
+    st.write(c.index)
+
+    file_name = "timebased_outliers_"+file_name
+    outlier_df.to_csv(Path("./data/processed") /file_name)
 
 def main():
     available_files = io.get_available_datasets("interim")
@@ -97,12 +119,21 @@ def main():
     #sns.distplot(cluster.outlier_scores_[np.isfinite(cluster.outlier_scores_)], rug=True)
     #st.pyplot()
     outliers = {}
+    outliers_list = []
     for score, vector in zip(cluster.outlier_scores_, vectors.items()):
         if score > 0.6:
             outliers[vector[0]] = vector[1]
-    
+            outliers_list.append(vector[0])
+            
+    df = log._df
+    outlier_df =df[df["visitId"].isin(outliers_list)]
 
-    write_outliers_to_pickle(outliers, file_name)
+    st.write(outlier_df)
+    #log._df.to_csv(Path('./data/processed') / fout)
+    file_name = "outliers_"+file_name
+    outlier_df.to_csv(Path("./data/processed") /file_name)
+
+    #write_outliers_to_pickle(outliers, file_name)
     outlier_trace_ids = [name for name in outliers.keys()]
 
     st.write(f"{len(outlier_trace_ids)} outliers found in {len(traces)} Traces.")
@@ -129,6 +160,8 @@ def main():
     # labels = db.labels_
 
     # print (labels)
+
+    time_anomaly(log._df, file_name)
 
 
 if __name__ == "__main__":
