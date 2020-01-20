@@ -35,13 +35,6 @@ def calc_distance(trace1, trace2) -> int:
 
     return distance
 
-
-# write all activities of a trace
-# calculate levenshtein distance between activitiy vectors
-# Next Steps Clustering
-
-# dbscan clustering
-
 def test_calc_distance():
     t1 = ["a", "a", "c", "a", "a", "a"]
     t2 = ["a", "b", "c"]
@@ -107,6 +100,8 @@ def main():
     for score, vector in zip(cluster.outlier_scores_, vectors.items()):
         if score > 0.6:
             outliers[vector[0]] = vector[1]
+    
+
     write_outliers_to_pickle(outliers, file_name)
     outlier_trace_ids = [name for name in outliers.keys()]
 
