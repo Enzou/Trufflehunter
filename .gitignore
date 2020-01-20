@@ -107,4 +107,4 @@ venv.bak/
 ## Trufflehhunter
 # data
 
-/data/raw/
+/data/*

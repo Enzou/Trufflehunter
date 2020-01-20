@@ -1,13 +1,13 @@
 import streamlit as st
 
-import ui.eda
+import ui.preprocessing
 import ui.cluster
 import ui.process_identification
 import ui.trufflehunter
 import ui.stats
 
 PAGES = {
-    "Weblog -> Eventlog": ui.eda,
+    "Preprocessing": ui.preprocessing,
     "Clustering": ui.cluster,
     "Process Identification": ui.process_identification,
     "TruffleHunt": ui.trufflehunter,
@@ -18,8 +18,8 @@ PAGES = {
 def main():
     st.sidebar.title("Navigation")
     pages = list(PAGES.keys())
-    # default_page = pages.index('Exploratory Data Analysis')
-    default_page = pages.index('Process Identification')
+    default_page = pages.index('Preprocessing')
+    # default_page = pages.index('Process Identification')
     # default_page = pages.index('TruffleHunt')
     selection = st.sidebar.radio("Go to", pages, index=default_page)
 

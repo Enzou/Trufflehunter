@@ -66,6 +66,8 @@ def save_clusters(log: EventLog, traces: pd.Series, clusters: List) -> None:
 
 
 def inspect_clusters(clusters, traces) -> None:
+    corpus = create_corpus(traces)
+
     clusters = sorted(clusters, key=len)  # smaller clusters are more suspicious
     hist = pd.DataFrame([len(c) for c in clusters])
     st.bar_chart(hist)
@@ -77,12 +79,13 @@ def inspect_clusters(clusters, traces) -> None:
         trace = traces[trace_id]
         activities.update(trace.activities)
 
+    st.bar_chart()
+
     st.write(activities)
 
 
-
 def main():
-    file_name, df = select_file('processed', default='dt_sessions_1k.csv')
+    file_name, df = select_file('interim', default='dt_sessions_1k.csv')
     attr_mapping = attribute_mapper.show(df.columns)
     log = EventLog(df, **attr_mapping)
     traces = log.get_traces(lambda t: t.str.len() > 1)

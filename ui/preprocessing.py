@@ -266,13 +266,28 @@ def load_data(file_name: str) -> pd.DataFrame:
     return df
 
 
+def convert_to_eventlog(df: pd.DataFrame, rules: Ruleset, file_name: str) -> None:
+    # map `from column` -> `to column` using optional mapping function
+    col_mapping = {
+        'visitId': 'visitId',
+        'ua_starttime': 'starttime',
+        'ua_duration': 'endtime',
+        's_clientType': 'clientType'
+    }
+    col_transformations = [
+        ('ua_name', 'activity', rules.entry_to_activity),
+        ('ua_name', 'path', lambda v: v.split(' ')[-1]),
+    ]
+    elog = convert_weblog(df, col_mapping, col_transformations, activity_attr='activity',
+                          case_id_attr='visitId', timestamp_attr='starttime',
+                          ts_parse_params={'unit': 'ms'})
+    dest_file = Path("./data/interim") / file_name
+    elog._df.to_csv(dest_file, index=False)
+    st.text(f"Saved event log to {dest_file}")
+
+
 def main():
     cli_mode = not st._is_running_with_streamlit
-    # available_files = io.get_available_datasets()
-    # file_name = st.sidebar.selectbox("Source web log: ",
-    #                                  options=available_files,
-    #                                  index=available_files.index('dt_sessions_70k.csv'))
-    # df = load_data(file_name)
     file_name, df = select_file(Path('raw'))
 
     # preprocess web log
@@ -283,17 +298,11 @@ def main():
     root, rules = mine_mapping_rules(res[0])
     if st.checkbox("Show activity tree", value=True):
         fig = draw_activity_tree(root, rules)
+        if st.button("Export page tree"):
+            export_page_tree(fig, file_name)
 
-    if st.button("Export page tree"):
-        export_page_tree(fig, file_name)
-
-    if st.button("Convert to weblog") or cli_mode:
-        elog = convert_weblog(df, source_col, rules, activity_attr='activity',
-                              case_id_attr='visitId', timestamp_attr='ua_starttime',
-                              ts_parse_params={'unit': 'ms'})
-        dest_file = Path("./data/processed") / file_name
-        elog._df.to_csv(dest_file, index=False)
-        st.text(f"Saved event log to {dest_file}")
+    if st.button("Save as event log") or cli_mode:
+        convert_to_eventlog(df_filtered, rules, file_name)
 
 
 if __name__ == "__main__":

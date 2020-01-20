@@ -63,7 +63,7 @@ def show_dotted_chart(log: EventLog) -> None:
 def main():
     st.header("Let the hunt begin!")
 
-    file_name, df = select_file(Path('./data/raw'), default='dt_sessions_1k.csv')
+    file_name, df = select_file(Path('processed'), default='dt_sessions_1k.csv')
     attr_mapping = attribute_mapper.show(df.columns)
     log = EventLog(df, **attr_mapping)
     #
