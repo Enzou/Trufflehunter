@@ -24,7 +24,7 @@ def select_file(src_dir: str, default: Optional[str] = None) -> Tuple[str, pd.Da
     """
     available_files = io.get_available_datasets(src_dir)
     default_idx = available_files.index(default) if default is default in available_files else 0
-    file_name = st.sidebar.selectbox("Source web log: ", options=available_files, index=default_idx)
+    file_name = st.sidebar.selectbox("Source file: ", options=available_files, index=default_idx)
     st.spinner("Loading data " + file_name)
     df = load_data(file_name, src_dir)
     st.write(f"Loaded {len(df)} entries")

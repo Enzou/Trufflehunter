@@ -27,7 +27,7 @@ aggregation_nodes = [
     "javabook",
     "language",
     "partners",
-    "perform-*",  # infos related to perform conferences
+    "perform-?.*",  # infos related to perform conferences
     "platform",  # TODO split between platform general and view of undercategory and 'comparison' and 'artificial-intelligence'
     "press-release",
     "release-notes",
@@ -112,53 +112,6 @@ def build_page_hierarchy(df: pd.DataFrame, prepruning_nodes: Optional[List] = No
     return d, max_count
 
 
-# def build_page_hierarchy_slow(df: pd.DataFrame) -> Tuple[Node, int]:
-#     root = Node('.', count=0)
-#     r = Resolver("name")
-#     max_count = 0  # for the color
-#
-#     for ua_name in tqdm(df.ua_name):
-#         if "loading of page" in ua_name:
-#             p = PurePath('.' + ua_name.split(' ')[-1])
-#
-#             try:
-#                 # parent = r.get(root, str(p.parent))
-#                 path = str(p)
-#                 node = r.get(root, str(p))
-#             except ChildResolverError:
-#                 parent = root
-#                 # recursively create parent nows if missing
-#                 for par in list(p.parents)[1::-1]:  # first two items are '.' and root node -> skip them
-#                     try:
-#                         parent = r.get(root, str(p))
-#                     except ChildResolverError:
-#                         parent = Node(par.name, parent, count=0)
-#                 node = Node(p.name, parent, count=0)
-#
-#             node.count += 1
-#             if node.count > max_count:
-#                 max_count = node.count
-#
-#     return root, max_count
-
-
-# def build_page_visit_graph(df: pd.DataFrame) -> Node:
-#     tree = {'/': Node('/')}
-#     for ua_name in tqdm(df.ua_name):
-#         if "loading of page" in ua_name:
-#             url_path = ua_name.split(' ')[-1]
-#             frags = url_path.split("/")[:-1]
-#             if len(frags) == 0:
-#                 print(f"invalid ua_name: {ua_name}")
-#                 continue
-#             frags[0] = '/'  # fix name of root node
-#
-#             for parent, node in zip(frags[:-1], frags[1:]):  # add missing in between nodes
-#                 tree[node] = Node(node, tree[parent])
-#
-#     return tree['/']
-
-
 def prune_tree(root: Node, min_nodes: int = 2) -> Node:
     '''
     Post-Prune page tree after creation by removing nodes that occurred at most 1 time.
@@ -181,15 +134,11 @@ def analyze_paths(df: pd.DataFrame) -> Tuple[Node, int]:
     tree, max_count = build_page_hierarchy(df, aggregation_nodes if use_prepruning else None)
     root = DictImporter().import_(tree)
 
-    if st.checkbox("Show pagetree in ASCII?", value=False):
-        st.text(RenderTree(root, style=ContRoundStyle()))
-    if st.checkbox("Show pagetree as graph?", value=True):
-        st.text(f"max count {max_count}")
-        min_counts = st.slider("Minimum number of counts:", value=2)
-        root = prune_tree(root, min_counts)
-
-        # no_leafs = len([True for n in PostOrderIter(root) if n.is_leaf])
-        # print(f"Tree has {no_leafs} leaf-nodes")
+    # if st.checkbox("Show pagetree in ASCII?", value=False):
+    #     st.text(RenderTree(root, style=ContRoundStyle()))
+    # if st.checkbox("Show pagetree as graph?", value=True):
+    min_counts = st.slider("Minimum number of counts:", value=2, min_value=0, max_value=50)
+    root = prune_tree(root, min_counts)
 
     return root, max_count
 
@@ -288,19 +237,27 @@ def convert_to_eventlog(df: pd.DataFrame, rules: Ruleset, file_name: str) -> Non
 
 def main():
     cli_mode = not st._is_running_with_streamlit
-    file_name, df = select_file(Path('raw'))
+
+    data_view_slot = st.empty()
+    file_name, df = select_file('raw')
 
     # preprocess web log
-    df_filtered = filter_by_session_length(df, 'visitId')
+    min_session_len = st.slider("Min. actions per session", min_value=1, max_value=10, value=2)
+    df_filtered = filter_by_session_length(df, 'visitId', min_session_len)
+    st.text(f"Filtered out {len(df) - len(df_filtered)} entries")
+    data_view_slot.dataframe(df_filtered.head(1000))
+
+    st.header("Create activity tree")
     res = analyze_paths(df_filtered)
 
     # fig = draw_page_tree(*res)
     root, rules = mine_mapping_rules(res[0])
     if st.checkbox("Show activity tree", value=True):
         fig = draw_activity_tree(root, rules)
-        if st.button("Export page tree"):
+        if st.button("Export graph as image"):
             export_page_tree(fig, file_name)
 
+    st.markdown('------')
     if st.button("Save as event log") or cli_mode:
         convert_to_eventlog(df_filtered, rules, file_name)
 
