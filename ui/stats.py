@@ -42,7 +42,7 @@ def stats(df, threshold = 2):
     visit_id = df["visitId"].value_counts().sort_values(ascending = False)
     st.markdown('---')
     
-    st.write("Traces Summary(visitID):", visit_id.describe())
+    #st.write("Traces Summary(visitID):", visit_id.describe())
     st.write("First 5 Lines:", df.head())
     
     st.markdown("## Sessions with the most Requests:")
@@ -57,8 +57,6 @@ def stats(df, threshold = 2):
     longest_trace_count = visit_id[options]
     st.write(f"Number of request in the Trace {longest_trace_count}")
 
-
-    
     show_table = st.checkbox('Show Table with all Activities?')
     # move to trufflehunt
     # select_all = st.checkbox('All "longest Traces"? (only selected)')
@@ -84,6 +82,10 @@ def stats(df, threshold = 2):
     st.table( df[URL].value_counts().head(10))
 
 
+
+
+
+
 def main():
     #option = st.selectbox("Statistics for:",("raw", "processed"))
     #file_name, df = select_file(option)
@@ -92,6 +94,7 @@ def main():
     # df = load_csv_data("first30k.csv")
     #df = df.set_index("Unnamed: 0")
     stats(df)
+
 
 # disco stats page als vorbild
 if __name__ == "__main__":
