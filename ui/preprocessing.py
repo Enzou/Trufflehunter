@@ -256,7 +256,7 @@ def main():
     root, rules = mine_mapping_rules(res[0])
     if st.checkbox("Show activity tree", value=True):
         fig = draw_activity_tree(root, rules)
-        if st.button("Export graph as image"):
+        if st.button("💾"):
             export_page_tree(fig, file_name)
 
     st.markdown('------')

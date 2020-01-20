@@ -6,6 +6,9 @@ from collections import Counter
 import markov_clustering as mcl
 import pandas as pd
 import streamlit as st
+import altair as alt
+import networkx as nx
+import nx_altair as nxa
 
 from src.event_log.eventlog import EventLog
 from src.pmtools.matrices import create_similarity_matrix
@@ -22,6 +25,27 @@ def cluster_with_markov(mat: pd.DataFrame, expansion: int, inflation: float) -> 
     return clusters
 
 
+def draw_cluster(matrix, clusters, traces) -> None:
+    g = nx.Graph(matrix)
+    # map node to cluster id for colors
+    cluster_map = {node: i + 1 for i, cluster in enumerate(clusters) for node in cluster}
+    for n_id in g.nodes():
+        node = g.nodes[n_id]
+        node['cluster'] = cluster_map[n_id]
+        node['id'] = traces.index[n_id]
+
+    # Compute positions for viz.
+    pos = nx.spring_layout(g, seed=42)
+    # Draw the graph using Altair
+    graph_viz = nxa.draw_networkx(g, pos=pos, node_color='cluster',
+                                  cmap='Paired',  # category20 colormap = `tab20`
+                                  edge_color='gainsboro',
+                                  node_tooltip=['cluster', 'id'])
+    st.altair_chart(graph_viz)
+    chart = create_cluster_histogram(clusters)
+    st.altair_chart(chart)
+
+
 def find_clusters(traces: pd.Series) -> List:
     corpus = create_corpus(traces)
     trace2vec_fn = partial(vectorize_trace, corpus)
@@ -29,11 +53,9 @@ def find_clusters(traces: pd.Series) -> List:
 
     expansion = st.slider("Expansion", min_value=2, max_value=100)
     inflation = st.slider("inflation", min_value=2., max_value=100.)
-    clusters = cluster_with_markov(mat, expansion, inflation)
-    show_labels = st.checkbox("Show labels?")
-    mcl.draw_graph(mat, clusters, node_size=50, with_labels=show_labels, edge_color="gainsboro")
-    st.pyplot()
-    st.write(f"{len(clusters)} clusters identified")
+    with st.spinner("Traces are being clusters - pleace be patient 😴 ..."):
+        clusters = cluster_with_markov(mat, expansion, inflation)
+        draw_cluster(mat, clusters, traces)
     return clusters
 
 
@@ -62,26 +84,43 @@ def save_clusters(log: EventLog, traces: pd.Series, clusters: List) -> None:
     :param traces: filtered subset of traces used for clustering. Needed to map the clusters back to the eventlog
     :param clusters: list of tuples with traces indices grouped together
     """
-    pass
+    st.balloons()
+
+
+def create_cluster_histogram(clusters) -> alt.Chart:
+    cluster_dict = [{"Cluster": i + 1, "Size": len(c)} for i, c in enumerate(clusters)]
+    hist = pd.DataFrame(cluster_dict)
+    chart = alt.Chart(hist).mark_bar().encode(
+        alt.X("Cluster:O"),
+        alt.Y("Size:Q"),
+        alt.Color('Cluster:O', scale=alt.Scale(scheme='Paired')),
+        tooltip=['Cluster', 'Size']
+    ).properties(
+        height=500
+    )
+    return chart
 
 
 def inspect_clusters(clusters, traces) -> None:
-    corpus = create_corpus(traces)
-
-    clusters = sorted(clusters, key=len)  # smaller clusters are more suspicious
-    hist = pd.DataFrame([len(c) for c in clusters])
-    st.bar_chart(hist)
-
-    cluster_id = st.number_input("Cluster ", min_value=0, value=0, max_value=len(clusters))
-    st.write(f"Cluster {cluster_id} has {len(clusters[cluster_id])} traces associated")
+    # analyze number of different activities in selected cluster
+    cluster_id = st.number_input("Cluster ", min_value=1, value=1, max_value=len(clusters))
+    selected_cluster = clusters[cluster_id - 1]
+    st.write(f"Cluster {cluster_id} has {len(selected_cluster)} traces associated")
     activities = Counter()
-    for trace_id in clusters[cluster_id]:
+    for trace_id in selected_cluster:
         trace = traces[trace_id]
         activities.update(trace.activities)
 
-    st.bar_chart()
-
-    st.write(activities)
+    df = pd.DataFrame({"Activity": list(activities.keys()), "Count": list(activities.values())})
+    chart = alt.Chart(df, padding={"top": 5}, height=500).mark_bar().encode(
+        alt.X("Activity", axis=alt.Axis(labelAngle=0)),
+        alt.Y("Count"),
+        tooltip=['Count']
+    ).properties(
+        # width=450,
+        height=500
+    )
+    st.altair_chart(chart)
 
 
 def main():
@@ -90,13 +129,16 @@ def main():
     log = EventLog(df, **attr_mapping)
     traces = log.get_traces(lambda t: t.str.len() > 1)
 
+    st.header("Cluster traces")
     clusters = find_clusters(traces)
+    st.write(f"{len(clusters)} clusters identified")
 
     if st.checkbox("Inspect trace?"):
         inspect_traces(traces)
 
     inspect_clusters(clusters, traces)
 
+    st.markdown('------')
     if st.button("Save clusters"):
         save_clusters(log, traces, clusters)
         fout = file_name.replace('.csv', '_clustered.csv')
