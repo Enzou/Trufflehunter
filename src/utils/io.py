@@ -22,12 +22,12 @@ def load_csv_data(file_name: str, src_dir: str = 'raw', prep_fn: Optional[Callab
     Read csv file from directory.
     """
     _DATA_DIR = Path('./data/')
-    allow_cache = src_dir == "raw"
-
-    if allow_cache:  # try 'caching' raw file to avoid applying the prep_fn needlessly
-        filtered_file = _DATA_DIR / 'interim' / file_name
-        if os.path.exists(filtered_file):
-            return pd.read_csv(filtered_file)
+    # allow_cache = src_dir == "raw"
+    #
+    # if allow_cache:  # try 'caching' raw file to avoid applying the prep_fn needlessly
+    #     filtered_file = _DATA_DIR / 'interim' / file_name
+    #     if os.path.exists(filtered_file):
+    #         return pd.read_csv(filtered_file)
 
     df = pd.read_csv(_DATA_DIR / src_dir / file_name)
     if prep_fn is not None:
@@ -35,9 +35,5 @@ def load_csv_data(file_name: str, src_dir: str = 'raw', prep_fn: Optional[Callab
         print(f"Filtered out {len(df) - len(df_filtered)} entries")
         df = df_filtered
     print(f"Loaded data: {len(df)}")
-
-    if allow_cache:
-        df.to_csv(filtered_file, index=False)  # store filtered DF for later re-usage
-        print("Saved filtered dataframe")
 
     return df

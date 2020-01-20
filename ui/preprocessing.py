@@ -177,6 +177,7 @@ def mine_mapping_rules(root: Node, min_leaf_nodes: int = 2) -> Tuple[Node, Rules
 
     rules += [
         (r"perform-?\w*", "View Perform-Conference Details"),
+        (r"/.*", "View homepage")
     ]
 
     rs = Ruleset(rules)
@@ -220,7 +221,7 @@ def convert_to_eventlog(df: pd.DataFrame, rules: Ruleset, file_name: str) -> Non
     col_mapping = {
         'visitId': 'visitId',
         'ua_starttime': 'starttime',
-        'ua_duration': 'endtime',
+        'ua_duration': 'duration',
         's_clientType': 'clientType'
     }
     col_transformations = [
@@ -244,7 +245,8 @@ def main():
     # preprocess web log
     min_session_len = st.slider("Min. actions per session", min_value=1, max_value=10, value=2)
     df_filtered = filter_by_session_length(df, 'visitId', min_session_len)
-    st.text(f"Filtered out {len(df) - len(df_filtered)} entries")
+    df_len = len(df_filtered)
+    st.markdown(f"Filtered {len(df) - df_len} entries - **{df_len}** entries remaining")
     data_view_slot.dataframe(df_filtered.head(1000))
 
     st.header("Create activity tree")
