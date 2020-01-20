@@ -40,7 +40,7 @@ def create_dotted_chart(df: pd.DataFrame, color_attribute: str, x_attr: str, y_a
         #          scale=alt.Scale(range=[0, 4000]),
         #          legend=alt.Legend(title='Annual Global Deaths')
         #          ),
-        color=alt.Color(color_attribute),
+        color=alt.Color(color_attribute, legend=alt.Legend(orient='top')),
         tooltip=tooltip
     ).properties(
         width=1000,
