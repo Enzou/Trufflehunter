@@ -49,14 +49,14 @@ def create_heuristic_matrix(log: EventLog) -> pd.DataFrame:
     return mat
 
 
-def create_similarity_matrix(corpus, traces, vectorizer_fn: Callable) -> np.array:
+def create_similarity_matrix(corpus, traces, vectorizer_fn: Callable) -> pd.DataFrame:
     # vfunc = np.vectorize(vectorizer_fn, otypes=[int] * len(corpus))
     # mat = vfunc(traces)
     # mat = np.fromiter((vectorizer_fn(t) for t in traces), dtype=int)
 
     # return mat
     m = [vectorizer_fn(t) for t in traces]
-    mat = cosine_similarity(m)
+    mat = pd.DataFrame(cosine_similarity(m), columns=traces.index, index=traces.index)
 
     return mat
 
