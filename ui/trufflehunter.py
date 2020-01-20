@@ -38,18 +38,40 @@ def export_log_file(log_file, file_path: Path):
     xes_exporter.export_log(log_file, str(xes_file))
 
 
+# def show_dotted_chart(log: EventLog) -> None:
+#     df = log._df.copy()
+#     st.write(df)
+#     #start_times = df.sort_values([log.ts_attr, log.case_id_attr]).groupby(by=log.case_id_attr).first()
+#     # add information about duration of case for every event
+#     #df['Duration'] = (df[log.ts_attr] - start_times.loc[df[log.case_id_attr]][log.ts_attr].values) / np.timedelta64(1, 'm')
+
+#     # TODO x-axis attribute: trace start-time (-> investigate case duration time), timestamp
+#     # TODO sorting traces (by duration of trace, case id, etc.)
+#     # TODO zooming
+
+#     st.sidebar.title('Settings')
+#     col_attr = st.sidebar.selectbox('Color Attribute:', df.columns, 3)
+#     x_attr = st.sidebar.selectbox('X-Axis:', [log.ts_attr, 'Duration'], 0)
+#     y_attr = st.sidebar.selectbox('Y-Axis:', [log.case_id_attr])
+#     y_sort = st.sidebar.selectbox('Sort Y-Axis:', [log.case_id_attr, 'Duration'])
+
+#     st.text(f"Loaded {len(df[log.case_id_attr].unique())} cases with a total of {len(df)} events")
+#     # tooltip = ['Activity', 'Timestamp', 'Resource', 'Costs']
+#     tooltip = [log.activity_attr, log.ts_attr]
+#     st.altair_chart(create_dotted_chart(df, col_attr, x_attr, y_attr, y_sort, tooltip=tooltip), width=-1)
 def show_dotted_chart(log: EventLog) -> None:
     df = log._df.copy()
-    start_times = df.sort_values([log.ts_attr, log.case_id_attr]).groupby(by=log.case_id_attr).first()
+    st.write(df)
+    #start_times = df.sort_values([log.ts_attr, log.case_id_attr]).groupby(by=log.case_id_attr).first()
     # add information about duration of case for every event
-    df['Duration'] = (df[log.ts_attr] - start_times.loc[df[log.case_id_attr]][log.ts_attr].values) / np.timedelta64(1, 'm')
+    #df['Duration'] = (df[log.ts_attr] - start_times.loc[df[log.case_id_attr]][log.ts_attr].values) / np.timedelta64(1, 'm')
 
     # TODO x-axis attribute: trace start-time (-> investigate case duration time), timestamp
     # TODO sorting traces (by duration of trace, case id, etc.)
     # TODO zooming
 
     st.sidebar.title('Settings')
-    col_attr = st.sidebar.selectbox('Color Attribute:', df.columns, 3)
+    col_attr = st.sidebar.selectbox('Color Attribute:', df.columns, 5)
     x_attr = st.sidebar.selectbox('X-Axis:', [log.ts_attr, 'Duration'], 0)
     y_attr = st.sidebar.selectbox('Y-Axis:', [log.case_id_attr])
     y_sort = st.sidebar.selectbox('Sort Y-Axis:', [log.case_id_attr, 'Duration'])
@@ -63,7 +85,7 @@ def show_dotted_chart(log: EventLog) -> None:
 def main():
     st.header("Let the hunt begin!")
 
-    file_name, df = select_file(Path('processed'), default='dt_sessions_1k.csv')
+    _, df = select_file(Path('processed'), default='dt_sessions_1k.csv')
     attr_mapping = attribute_mapper.show(df.columns)
     log = EventLog(df, **attr_mapping)
     #
@@ -71,6 +93,17 @@ def main():
     # log = log[log._df['ua_type'] == 'Load']   # drop XHR requests to tracking/analytics sites
 
     show_dotted_chart(log)
+    # move to trufflehunt
+    # select_all = st.checkbox('All "longest Traces"? (only selected)')
+    
+    # if select_all:
+    #     selected_for_dotted_chart = df[ df.visitId.isin( list(longest_trace) )]
+    # else: 
+    #     selected_for_dotted_chart = df[ df.visitId.str.contains( options )]
+    
+    # dotted_log = EventLog(selected_for_dotted_chart, case_id_attr='visitId', activity_attr='ua_name',
+    #                          timestamp_attr='ua_starttime', ts_parse_params={'unit': 'ms'})
+    # show_dotted_chart(dotted_log)
 
     mat_map = {
         'Footprint Matrix': matrices.create_footprint_matrix,

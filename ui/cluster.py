@@ -15,7 +15,8 @@ from src.preprocessing.vectorize import create_corpus, create_np_matrix, vectori
 import src.utils.io as io
 from ui.components import attribute_mapper
 
-DATA_PATH = Path("data/processed")
+DATA_PATH = Path("data/interim")
+DATA_PATH_Processed = Path("data/processed")
 
 
 def calc_distance(trace1, trace2) -> int:
@@ -34,13 +35,6 @@ def calc_distance(trace1, trace2) -> int:
 
     return distance
 
-
-# write all activities of a trace
-# calculate levenshtein distance between activitiy vectors
-# Next Steps Clustering
-
-# dbscan clustering
-
 def test_calc_distance():
     t1 = ["a", "a", "c", "a", "a", "a"]
     t2 = ["a", "b", "c"]
@@ -53,17 +47,17 @@ def read_processed_data(name):
 
 
 def write_outliers_to_pickle(outliers, file_name):
+
     match = re.search("\w+", file_name)
     file_name = "outliers_" + match.group(0) + ".pickle"
-    with open(DATA_PATH / file_name, 'wb') as f:
+    with open(DATA_PATH_Processed / file_name, 'wb') as f:
         pickle.dump(outliers, f)
 
 
 def main():
-    available_files = io.get_available_datasets("../data/processed")
+    available_files = io.get_available_datasets("interim")
     file_name = st.sidebar.selectbox("Source web log: ",
-                                     options=available_files,
-                                     index=available_files.index('dt_sessions_70k.csv'))
+                                     options=available_files)
 
     log = read_processed_data(file_name)
 
@@ -71,6 +65,7 @@ def main():
     case_attr = attr_mapping['case_id_attr']
     traces = filter_by_session_length(log._df, case_attr)
     traces = traces.groupby(case_attr).apply(Trace, attrs=attr_mapping)
+   
 
     corpus = create_corpus(traces)
     show_corpus = st.checkbox("Show Corpus")
@@ -80,25 +75,42 @@ def main():
     vectors_ids, vectors, vector_max_len = vectorize_activities(traces, corpus)
     matrix = create_np_matrix(vectors_ids, vector_max_len)
 
-    # TODO write stuff to pickle 
+    min_cluster_size = 4
+    min_sample = 1
 
-    cluster = hdbscan.HDBSCAN(min_cluster_size=10, min_samples=2).fit(matrix)
+    change_parameters = st.checkbox("Change Parameters")
+    if change_parameters:
+        min_cluster_size = st.slider("Min Cluster size: ", 2, 20, 4)
+        min_sample = st.slider("min samples per cluster: ", 1, 5, 1)
+    
+    st.write(f"""\nDBSCAN with the parameters:\n
+    min_cluster_size = {min_cluster_size}\n
+    min_samples per cluster = {min_sample}""")
+    
+
+    cluster = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_sample,
+    cluster_selection_epsilon=0.5).fit(matrix)
     """
         Outlierdetection: https://hdbscan.readthedocs.io/en/latest/outlier_detection.html
     """
     # "outlier_scores: ", cluster.outlier_scores_
-    sns.distplot(cluster.outlier_scores_[np.isfinite(cluster.outlier_scores_)], rug=True)
-    st.pyplot()
+    #sns.distplot(cluster.outlier_scores_[np.isfinite(cluster.outlier_scores_)], rug=True)
+    #st.pyplot()
     outliers = {}
     for score, vector in zip(cluster.outlier_scores_, vectors.items()):
         if score > 0.6:
-            # st.write(vector)
             outliers[vector[0]] = vector[1]
-    # print (outliers)
+    
+
     write_outliers_to_pickle(outliers, file_name)
     outlier_trace_ids = [name for name in outliers.keys()]
 
-    selected_outlier = st.selectbox("Select Outlier:", outlier_trace_ids)
+    st.write(f"{len(outlier_trace_ids)} outliers found in {len(traces)} Traces.")
+    show_outliers = st.checkbox("show a list of all outliers?")
+    if show_outliers:
+        st.write(outlier_trace_ids)
+
+    selected_outlier = st.selectbox("Select Outlier to get trace:", outlier_trace_ids)
 
     st.write(outliers[selected_outlier])
     # cluster_labels = cluster.fit_predict(matrix)
