@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Dict, Callable, List
+from typing import Optional, Dict, Callable, List, Union
 
 import pandas as pd
 from src.event_log.trace import Trace
@@ -71,3 +71,16 @@ class EventLog:
             return self.traces[filter_fn]
         else:
             return self.traces
+
+    def set_clusters(self, cluster_map: Dict) -> None:
+        """
+        Tags each trace with a cluster number
+        :param cluster_map: dict mapping the visitId to a cluster number
+        """
+        self._df['cluster'] = self._df[self.case_id_attr].map(cluster_map)
+
+    def shatter(self, by: str) -> List:
+        pass
+
+    def export_to_csv(self, dest_file: Union[Path, str]) -> None:
+        self._df.to_csv(dest_file, index=False)

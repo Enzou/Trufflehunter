@@ -18,8 +18,8 @@ PAGES = {
 def main():
     st.sidebar.title("Navigation")
     pages = list(PAGES.keys())
-    default_page = pages.index('Preprocessing')
-    # default_page = pages.index('Process Identification')
+    # default_page = pages.index('Preprocessing')
+    default_page = pages.index('Process Identification')
     # default_page = pages.index('TruffleHunt')
     selection = st.sidebar.radio("Go to", pages, index=default_page)
 

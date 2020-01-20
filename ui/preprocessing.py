@@ -232,7 +232,7 @@ def convert_to_eventlog(df: pd.DataFrame, rules: Ruleset, file_name: str) -> Non
                           case_id_attr='visitId', timestamp_attr='starttime',
                           ts_parse_params={'unit': 'ms'})
     dest_file = Path("./data/interim") / file_name
-    elog._df.to_csv(dest_file, index=False)
+    elog.export_to_csv(dest_file)
     st.text(f"Saved event log to {dest_file}")
 
 
@@ -256,7 +256,7 @@ def main():
     root, rules = mine_mapping_rules(res[0])
     if st.checkbox("Show activity tree", value=True):
         fig = draw_activity_tree(root, rules)
-        if st.button("Export graph as image"):
+        if st.button("💾"):
             export_page_tree(fig, file_name)
 
     st.markdown('------')
