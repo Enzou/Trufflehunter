@@ -13,10 +13,10 @@ from src.preprocessing.ruleset import Ruleset
 
 def convert_weblog(df: pd.DataFrame, column_mapping: Dict, column_transformations: List[Tuple], **el_params) -> EventLog:
     event_df = df[list(column_mapping.keys())]
-    event_df.rename(columns=column_mapping, inplace=True)
+    event_df = event_df.rename(columns=column_mapping)
 
-    for from_col, to_col, fn in column_transformations:
-        event_df[to_col] = df[from_col].apply(fn)
+    transformed_cols = {to_col: df[from_col].apply(fn) for from_col, to_col, fn in column_transformations}
+    event_df = event_df.assign(**transformed_cols)
     return EventLog(event_df, **el_params)
 
 
