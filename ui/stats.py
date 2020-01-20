@@ -2,6 +2,8 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
+from ui.components import attribute_mapper
+from ui.components.data_selector import select_file
 from ui.trufflehunter import show_dotted_chart
 from src.event_log.eventlog import EventLog
 from src.utils.io import load_csv_data
@@ -72,7 +74,9 @@ def stats(df, threshold = 2):
     # TODO: stats only works with dataframe
 
 def main():
-    df = load_csv_data("first30k.csv")
+    file_name, df = select_file('processed', default='dt_sessions_1k.csv')
+    attr_mapping = attribute_mapper.show(df.columns)
+    # df = load_csv_data("first30k.csv")
     df = df.set_index("Unnamed: 0")
     stats(df)
 
