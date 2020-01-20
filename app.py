@@ -8,10 +8,10 @@ import ui.stats
 
 PAGES = {
     "Preprocessing": ui.preprocessing,
+    "Statistics": ui.stats,
     "Clustering": ui.cluster,
     "Process Identification": ui.process_identification,
-    "TruffleHunt": ui.trufflehunter,
-    "Statistics": ui.stats
+    "TruffleHunt": ui.trufflehunter   
 }
 
 
