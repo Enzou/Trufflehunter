@@ -11,10 +11,17 @@ from src.utils.io import load_csv_data
 URL = 'path'
 
 def time_boxplot(df):
+
+    df = df.groupby("visitId").agg({"endtime": ["sum"]})
+    df = df.groupby("visitId").apply(lambda x: x["endtime"].sum()/60)
+
+    st.write("longest Traces in seconds", df.sort_values(by="sum", ascending = False).head(5))
+    
+    #st.write(df.describe())
     return alt.Chart(df).mark_boxplot().encode(
         #x = alt.Y('visitId', axis = alt.Axis(format= '', title = 'Traces' )),
-        x= alt.X('endtime:Q', axis = alt.Axis(format = '', title = 'Duration'))
-    )
+        x= alt.X('sum', axis = alt.Axis(format = '', title = 'Duration in seconds'))
+    ).properties(title= "Duration of Traces")
 
 # umbauen auf eventlog -> dottet chart with activities
 def stats(df, threshold = 2):
@@ -22,15 +29,15 @@ def stats(df, threshold = 2):
     visit_id = df["visitId"].value_counts().sort_values(ascending = False)
     visit_id = visit_id.rename(columns = { "visitId" : "TraceId" } )
     
-    df_trace_size_smaler_th = df[df.groupby('visitId')['visitId'].transform('count').lt(threshold)]
+    #df_trace_size_smaler_th = df[df.groupby('visitId')['visitId'].transform('count').lt(threshold)]
 
     st.markdown( '# Stats and stuff:' ) 
     
-    st.write( f"""
-    Log contains {df.shape[0]} rows, this form {visit_id.shape[0]} different traces.
+    # st.write( f"""
+    # Log contains {df.shape[0]} rows, this form {visit_id.shape[0]} different traces.
 
-    {df_trace_size_smaler_th.shape[0]} lines are removed cause the Trace length is smaller than the Threshhold {threshold}.
-    """)
+    # {df_trace_size_smaler_th.shape[0]} lines are removed cause the Trace length is smaller than the Threshhold {threshold}.
+    # """)
     df = df[df.groupby('visitId')['visitId'].transform('count').gt(threshold)]
     visit_id = df["visitId"].value_counts().sort_values(ascending = False)
     st.markdown('---')
@@ -69,8 +76,7 @@ def stats(df, threshold = 2):
         st.table( df[ df.visitId.str.contains( options )])
 
     st.markdown ("## Duration: ")
-    st.write("Traces Summary:", df.describe())
-
+    #st.write("Traces Summary:", df.describe())
     st.write(time_boxplot(df))
     
     st.markdown ("## Top 10 requested Paths: ")
