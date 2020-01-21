@@ -133,7 +133,7 @@ def save_clusters(log: EventLog, cluster_map: Dict, file_name: str) -> None:
 def main():
     file_name, df = select_file('interim', default='dt_sessions_1k.csv')
     attr_mapping = attribute_mapper.show(df.columns)
-    log = EventLog(df, **attr_mapping)
+    log = EventLog(df, **attr_mapping, ts_parse_params={})
     traces = log.get_traces(lambda t: t.str.len() > 1)
 
     st.header("Cluster traces")

@@ -102,7 +102,7 @@ def rank_traces_by_cluster_size(log) -> List:
     cluster_sizes = log._df.cluster.value_counts().to_dict()
     total = sum(cluster_sizes.values())
     suspicious_clusters = reversed([c for c, size in cluster_sizes.items() if threshold > size/total])
-    
+
     for sc in suspicious_clusters:
         st.markdown(f"* {int(sc)}")
 

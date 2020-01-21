@@ -17,7 +17,7 @@ def convert_weblog(df: pd.DataFrame, column_mapping: Dict, column_transformation
 
     transformed_cols = {to_col: df[from_col].apply(fn) for from_col, to_col, fn in column_transformations}
     event_df = event_df.assign(**transformed_cols)
-    return EventLog(event_df, **el_params)
+    return EventLog(event_df, **el_params, ts_parse_params={})
 
 
 def filter_by_session_length(df: pd.DataFrame, session_col: str, min_len: int = 2) -> pd.DataFrame:
