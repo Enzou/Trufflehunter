@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional, List
 import numpy as np
 import os
 import sys
@@ -7,6 +7,7 @@ from functools import reduce
 from itertools import combinations
 
 import streamlit as st
+import altair as alt
 
 from src.visualization import visualization as visu
 from src.pmtools import matrices
@@ -95,24 +96,18 @@ def detected_with_multible_methods():
     st.write(found)
 
 
-def main():
-    st.header("Let the hunt begin!")
-    show_possible_anomalies = st.checkbox("Show possible anomalies?")
-    if show_possible_anomalies:
-        detected_with_multible_methods()
-
-    file_name, df = select_file(Path('processed'), default='dt_sessions_1k.csv')
-    attr_mapping = attribute_mapper.show(df.columns)
-    log = EventLog(df, **attr_mapping, ts_parse_params={})
-
-    st.write(file_name)
-    #
-    # log = import_log_file(DATA_DIR / log_file)
-    # log = log[log._df['ua_type'] == 'Load']   # drop XHR requests to tracking/analytics sites
-
-    show_dotted_chart(log)
+def rank_traces_by_cluster_size(log) -> List:
+    st.subheader("Process Cluster based outlier:")
+    threshold = st.slider("Threshold", min_value=0.001, value=0.1, max_value=1.)
+    cluster_sizes = log._df.cluster.value_counts().to_dict()
+    total = sum(cluster_sizes.values())
+    suspicious_clusters = reversed([c for c, size in cluster_sizes.items() if threshold > size/total])
+    
+    for sc in suspicious_clusters:
+        st.markdown(f"* {int(sc)}")
 
 
+def mine_process(log) -> Optional[alt.Chart]:
     mat_map = {
         'Footprint Matrix': matrices.create_footprint_matrix,
         'Heuristic Matrix': matrices.create_heuristic_matrix
@@ -139,14 +134,34 @@ def main():
     if visu_type != 'None':
         st.subheader(f"{visu_type}:")
         if visu_type == 'Petri Net':
-            gviz = pn_vis_factory.apply(net, start_mark, end_mark)
-            st.graphviz_chart(gviz)
+            return pn_vis_factory.apply(net, start_mark, end_mark)
         elif visu_type == 'Directly Follows Graph':
             mat = matrices.create_heuristic_matrix(log)
-            gviz = visu.create_directly_follows_graph(mat)
-            st.graphviz_chart(gviz)
+            return visu.create_directly_follows_graph(mat)
+    return None
 
-    outliers()
+
+def main():
+    st.header("Let the hunt begin!")
+    show_possible_anomalies = st.checkbox("Show possible anomalies?")
+    if show_possible_anomalies:
+        detected_with_multible_methods()
+
+    file_name, df = select_file(Path('processed'), default='dt_sessions_1k.csv')
+    attr_mapping = attribute_mapper.show(df.columns)
+    log = EventLog(df, **attr_mapping, ts_parse_params={})
+
+    st.write(file_name)
+
+    if 'cluster' in log._df:
+        ranked_traces = rank_traces_by_cluster_size(log)
+
+    show_dotted_chart(log)
+    viz = mine_process(log)
+    if viz:
+        st.graphviz_chart(viz)
+
+    # outliers()
 
 
 if __name__ == "__main__":
