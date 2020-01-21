@@ -12,8 +12,8 @@ URL = 'path'
 
 def time_boxplot(df):
 
-    df = df.groupby("visitId").agg({"endtime": ["sum"]})
-    df = df.groupby("visitId").apply(lambda x: x["endtime"].sum()/60)
+    df = df.groupby("visitId").agg({"duration": ["sum"]})
+    df = df.groupby("visitId").apply(lambda x: x["duration"].sum()/60)
 
     st.write("longest Traces in seconds", df.sort_values(by="sum", ascending = False).head(5))
     
@@ -82,10 +82,6 @@ def stats(df, threshold = 2):
     st.table( df[URL].value_counts().head(10))
 
 
-
-
-
-
 def main():
     #option = st.selectbox("Statistics for:",("raw", "processed"))
     #file_name, df = select_file(option)
@@ -93,6 +89,7 @@ def main():
     attr_mapping = attribute_mapper.show(df.columns)
     # df = load_csv_data("first30k.csv")
     #df = df.set_index("Unnamed: 0")
+
     stats(df)
 
 
