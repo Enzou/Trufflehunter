@@ -3,6 +3,8 @@ from typing import Union
 import numpy as np
 import os
 import sys
+from functools import reduce
+from itertools import combinations
 
 import streamlit as st
 
@@ -10,8 +12,10 @@ from src.visualization import visualization as visu
 from src.pmtools import matrices
 from src.event_log.eventlog import EventLog
 from src.miners import AlphaMiner
+from src.utils import io
 from pm4py.objects.log.exporter.xes import factory as xes_exporter
 from pm4py.visualization.petrinet import factory as pn_vis_factory
+
 
 
 # TODO:
@@ -82,28 +86,55 @@ def show_dotted_chart(log: EventLog) -> None:
     st.altair_chart(create_dotted_chart(df, col_attr, x_attr, y_attr, y_sort, tooltip=tooltip), width=-1)
 
 
+def load_all_processed_data():
+    available_files = io.get_available_datasets(Path('processed'))
+
+    data = []
+    for av_file in available_files:
+        df = io.load_csv_data(av_file, "processed")
+        df["source"] = av_file
+        data.append(df)
+
+    datacol = [d["visitId"] for d in data]
+    return datacol
+
+def trace_in_all_detections():
+    datacol = load_all_processed_data()
+    test = reduce(set.intersection, map(set, datacol))
+    
+    st.markdown(f"### Detected the following trace(s) with all methods: ") 
+    st.write(list(test))
+    return test, datacol
+
+def detected_with_multible_methods():
+    detected, datacol = trace_in_all_detections()
+    combos = combinations(datacol, 2)
+    st.markdown("### Detected the following trace(s) with atleast 2 methods:")
+    found = []
+    for c in combos:
+        test = reduce(set.intersection, map(set, c))
+        if detected not in test:
+            found.extend(test)
+    st.write(found)
+
+
 def main():
     st.header("Let the hunt begin!")
+    show_possible_anomalies = st.checkbox("Show possible anomalies?")
+    if show_possible_anomalies:
+        detected_with_multible_methods()
 
-    _, df = select_file(Path('processed'), default='dt_sessions_1k.csv')
+    file_name, df = select_file(Path('processed'), default='dt_sessions_1k.csv')
     attr_mapping = attribute_mapper.show(df.columns)
     log = EventLog(df, **attr_mapping)
+
+    st.write(file_name)
     #
     # log = import_log_file(DATA_DIR / log_file)
     # log = log[log._df['ua_type'] == 'Load']   # drop XHR requests to tracking/analytics sites
 
     show_dotted_chart(log)
-    # move to trufflehunt
-    # select_all = st.checkbox('All "longest Traces"? (only selected)')
-    
-    # if select_all:
-    #     selected_for_dotted_chart = df[ df.visitId.isin( list(longest_trace) )]
-    # else: 
-    #     selected_for_dotted_chart = df[ df.visitId.str.contains( options )]
-    
-    # dotted_log = EventLog(selected_for_dotted_chart, case_id_attr='visitId', activity_attr='ua_name',
-    #                          timestamp_attr='ua_starttime', ts_parse_params={'unit': 'ms'})
-    # show_dotted_chart(dotted_log)
+
 
     mat_map = {
         'Footprint Matrix': matrices.create_footprint_matrix,
@@ -137,6 +168,8 @@ def main():
             mat = matrices.create_heuristic_matrix(log)
             gviz = visu.create_directly_follows_graph(mat)
             st.graphviz_chart(gviz)
+
+    outliers()
 
 
 if __name__ == "__main__":
