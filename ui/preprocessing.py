@@ -233,7 +233,7 @@ def convert_to_eventlog(df: pd.DataFrame, rules: Ruleset, file_name: str) -> Non
                           ts_parse_params={'unit': 'ms'})
     dest_file = Path("./data/interim") / file_name
     elog.export_to_csv(dest_file)
-    st.text(f"Saved event log to {dest_file}")
+    st.text(f"Saved event log to {dest_file} ✔️")
 
 
 def main():

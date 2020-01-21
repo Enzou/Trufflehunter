@@ -28,19 +28,19 @@ def create_dotted_chart(df: pd.DataFrame, color_attribute: str, x_attr: str, y_a
     #     detail='Duration',
     #     color=alt.Color(color_attribute))
 
-    c = alt.Chart(df).mark_circle(
+    c = alt.Chart(df, ).mark_circle(
         opacity=0.8,
         size=100,
         # stroke='black',
         # strokeWidth=1
     ).encode(
         alt.X(f"{x_attr}:T"),
-        alt.Y(f"{y_attr}:O", axis=alt.Axis(labelAngle=90)),  # sort=alt.EncodingSortField(field=y_sort)),
+        alt.Y(f"{y_attr}:O", axis=alt.Axis(labelAngle=90), sort=alt.EncodingSortField(field=y_sort)),
         # alt.Size('Deaths:Q',
         #          scale=alt.Scale(range=[0, 4000]),
         #          legend=alt.Legend(title='Annual Global Deaths')
         #          ),
-        color=alt.Color(color_attribute, legend=alt.Legend(orient='top')),
+        color=alt.Color(color_attribute, legend=None),
         tooltip=tooltip
     ).properties(
         width=1000,

@@ -10,10 +10,12 @@ class Trace:
         self.activity_attr = attrs.get('activity_attr', 'Activity')
         self.id_attr = attrs.get('case_id_attr', 'Case ID')
         self.ts_attr = attrs.get('timestamp_attr', 'Timestamp')
+        self.duration_attr = attrs.get('duration_attr', 'Duration')
         self.features: List[str] = list(df.columns)
         self.id = df[self.id_attr].iloc[0]
         self._df = df
         self._events: List[Dict] = df.to_dict('records')
+        self._starttime = self._events[0][self.ts_attr]
 
     def __iter__(self):
         return (e for e in self._events)
@@ -24,6 +26,14 @@ class Trace:
         #          'decide', 'reinitiate request', 'pay compensation', 'reject request']
         # tmp_map = {a: letter for a, letter in zip(tmp_a, 'abcdefgh')}
         return [e[self.activity_attr] for e in self._events]
+
+    @property
+    def duration(self):
+        last = self._events[-1]
+        return self._starttime - last[self.ts_attr] + last[self.duration_attr]
+
+    def get_time_passed(self, ref_time):
+        return ref_time - self._starttime
 
     def __len__(self):
         return len(self._events)

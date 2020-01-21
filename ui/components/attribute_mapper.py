@@ -39,6 +39,13 @@ def get_starttime_default(features: List[str]) -> int:
     return 0
 
 
+def get_duration_default(features: List[str]) -> int:
+    for idx, f in enumerate(features):
+        if 'duration' in f.lower():
+            return idx
+    return 0
+
+
 def show(features: List[str], in_sidebar=True) -> Dict:
     s = st.sidebar if in_sidebar else st
 
@@ -58,8 +65,8 @@ def show(features: List[str], in_sidebar=True) -> Dict:
     mapped.append(starttime_attr)
     unmapped = [f for f in unmapped if f not in mapped]
 
-    endime_attr = s.selectbox("Endtime:", unmapped)
-    mapped.append(endime_attr)
+    duration_attr = s.selectbox("Duration:", unmapped, get_duration_default(unmapped))
+    mapped.append(duration_attr)
     unmapped = [f for f in unmapped if f not in mapped]
 
     res_attrs = s.multiselect("Resources:", unmapped)
@@ -70,5 +77,6 @@ def show(features: List[str], in_sidebar=True) -> Dict:
         "case_id_attr": case_attr,
         "activity_attr": activity_attr,
         "timestamp_attr": starttime_attr,
+        "duration_attr": duration_attr,
         "resource_attrs": res_attrs
     }

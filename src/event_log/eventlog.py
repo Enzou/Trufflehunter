@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional, Dict, Callable, List, Union
 
 import pandas as pd
+import numpy as np
 from src.event_log.trace import Trace
 
 import streamlit as st
@@ -12,21 +13,25 @@ import streamlit as st
 # visitID -> Case ID
 class EventLog:
     def __init__(self, df: Optional[pd.DataFrame], case_id_attr='visitId', activity_attr='Activity',
-                 timestamp_attr='Timestamp', ts_parse_params: Optional[Dict] = None, **kwargs):
+                 timestamp_attr='Timestamp', duration_attr='Duration', ts_parse_params: Optional[Dict] = None, **kwargs):
         self._df = df
         self.case_id_attr = case_id_attr
         self.activity_attr = activity_attr
         self.ts_attr = timestamp_attr
+        self.duration_attr = duration_attr
+        self.time_passed_attr = 'time_passed'
         self._ts_parse_params = ts_parse_params
-        if ts_parse_params:
+        if ts_parse_params is not None:
             self._df.loc[:, self.ts_attr] = pd.to_datetime(self._df[self.ts_attr], **ts_parse_params)
 
         log_attrs = {
             'activity_attr': activity_attr,
             'case_id_attr': case_id_attr,
-            'timestamp_attr': timestamp_attr
+            'timestamp_attr': timestamp_attr,
+            'duration_attr': self.duration_attr
         }
         self.traces = df.groupby(self.case_id_attr).apply(Trace, attrs=log_attrs)  # TODO implement more performant alternative
+        self.determine_trace_duration()
 
     @classmethod
     def read_from(cls, path: Path, **kwargs):
@@ -71,6 +76,15 @@ class EventLog:
             return self.traces[filter_fn]
         else:
             return self.traces
+
+    def _get_time_since_tracestart(self, row):
+        t = self.traces[row[self.case_id_attr]]
+        td = t.get_time_passed(row[self.ts_attr])
+        return td / np.timedelta64(1, 'ms')
+
+    def determine_trace_duration(self) -> None:
+        self._df[self.time_passed_attr] = self._df.apply(self._get_time_since_tracestart, axis=1)
+        # self._df[self.duration_attr] = self.traces[self._df[self.case_id_attr]].get_time_passed(self._df[self.ts_attr])
 
     def set_clusters(self, cluster_map: Dict) -> None:
         """
